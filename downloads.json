@@ -1,5 +1,18 @@
 [
   {
+    "nome": "2TESTE",
+    "id": "bedrock-painel-axenthost-visual-v31",
+    "descricao": "TESTE2",
+    "versao": "v1.0.0",
+    "tipo": "ZIP",
+    "tamanho": "122 KB",
+    "data": "02/10/2026",
+    "detalhes": "2TESTE",
+    "imagem": "",
+    "pagina": false,
+    "url": "https://github.com/Arthulypa/site-de-downloads/raw/refs/heads/arquivos/bedrock-painel-axenthost-visual-v31.zip"
+  },
+  {
     "nome": "TESTE",
     "id": "bedrock-painel-addon-compat-v29",
     "descricao": "TESTE",
