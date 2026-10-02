@@ -471,7 +471,7 @@ async function erroGH(r){
   if (r.status === 401) return new Error("Token inválido ou expirado. Gere um novo no GitHub.");
   if (r.status === 403) return new Error("O token não tem permissão de escrita (Contents: Read and write) neste repositório.");
   if (r.status === 404) return new Error("Repositório não encontrado, ou o token não tem acesso a ele. Confira usuário, repositório e token.");
-  if (r.status === 409) return new Error("A lista foi alterada ao mesmo tempo. Tente de novo.");
+  if (r.status === 409) { const e = new Error("A lista foi alterada ao mesmo tempo. Tente de novo."); e.status = 409; return e; }
   if (r.status === 422) return new Error("O GitHub recusou: " + (m || "confira se a branch existe."));
   return new Error("Erro " + r.status + (m ? ": " + m : ""));
 }
@@ -484,6 +484,17 @@ const hdrs = () => ({
 });
 const textoParaB64 = t => { let s = ""; new TextEncoder().encode(t).forEach(x => s += String.fromCharCode(x)); return btoa(s); };
 const b64ParaTexto = b => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g, "")), c => c.charCodeAt(0)));
+
+const ghGet = (url, h) => fetch(url + (url.includes("?") ? "&" : "?") + "_=" + Date.now(), { headers: h, cache: "no-store" });
+async function comRetry(fn){
+  for (let t = 0; ; t++) {
+    try { return await fn(); }
+    catch (e) {
+      if (e.status === 409 && t < 2) { await new Promise(r => setTimeout(r, 900)); continue; }
+      throw e;
+    }
+  }
+}
 
 function validar(){
   const f = arquivoSel;
@@ -499,7 +510,7 @@ async function subirArquivo(f){
   const c = cfg(), h = hdrs();
   const api = `https://api.github.com/repos/${c.user}/${c.repo}/contents/${encodeURI(f.name)}`;
   let sha;
-  const ex = await fetch(`${api}?ref=${encodeURIComponent(c.branch)}`, { headers: h });
+  const ex = await ghGet(`${api}?ref=${encodeURIComponent(c.branch)}`, h);
   if (ex.ok) sha = (await ex.json()).sha;
   else if (ex.status !== 404) throw await erroGH(ex);
   const content = await paraBase64(f);
@@ -518,7 +529,7 @@ async function subirArquivo(f){
 async function lerLista(){
   const c = cfg(), h = hdrs();
   const api = `https://api.github.com/repos/${c.user}/${c.repo}/contents/downloads.json`;
-  const ex = await fetch(`${api}?ref=${encodeURIComponent(c.branch)}`, { headers: h });
+  const ex = await ghGet(`${api}?ref=${encodeURIComponent(c.branch)}`, h);
   if (ex.status === 404) return { api, lista: [], sha: undefined };
   if (!ex.ok) throw await erroGH(ex);
   const j = await ex.json();
@@ -543,14 +554,16 @@ async function gravarLista(api, lista, sha, mensagem){
   if (!r.ok) throw await erroGH(r);
 }
 
-async function publicarLista(entrada, original){
-  const r = await lerLista();
-  let lista = r.lista;
-  let pos = lista.findIndex(d => d.url === (original || entrada.url));
-  if (pos < 0) { lista.unshift(entrada); pos = 0; } else lista[pos] = entrada;
-  lista = lista.filter((d, k) => k === pos || d.url !== entrada.url);
-  await gravarLista(r.api, lista, r.sha, "Atualiza downloads.json");
-  return lista;
+function publicarLista(entrada, original){
+  return comRetry(async () => {
+    const r = await lerLista();
+    let lista = r.lista;
+    let pos = lista.findIndex(d => d.url === (original || entrada.url));
+    if (pos < 0) { lista.unshift(entrada); pos = 0; } else lista[pos] = entrada;
+    lista = lista.filter((d, k) => k === pos || d.url !== entrada.url);
+    await gravarLista(r.api, lista, r.sha, "Atualiza downloads.json");
+    return lista;
+  });
 }
 
 function nomeDoArquivo(url){
@@ -565,7 +578,7 @@ function nomeDoArquivo(url){
 async function apagarArquivo(nome){
   const c = cfg(), h = hdrs();
   const api = `https://api.github.com/repos/${c.user}/${c.repo}/contents/${encodeURI(nome)}`;
-  const ex = await fetch(`${api}?ref=${encodeURIComponent(c.branch)}`, { headers: h });
+  const ex = await ghGet(`${api}?ref=${encodeURIComponent(c.branch)}`, h);
   if (ex.status === 404) return false;
   if (!ex.ok) throw await erroGH(ex);
   const sha = (await ex.json()).sha;
@@ -585,7 +598,7 @@ $("enviar").addEventListener("click", async () => {
   salvarCfg(); ocupado(true);
   status("Enviando... arquivos grandes podem demorar.");
   try {
-    const atualizou = await subirArquivo(arquivoSel);
+    const atualizou = await comRetry(() => subirArquivo(arquivoSel));
     linkPronto = true; estadoLink();
     status(atualizou ? "Arquivo atualizado no GitHub. O bloco já está com o link certo." : "Arquivo enviado. Agora copie o bloco e cole no index.html do site.", "ok");
   } catch (e) { status(e.message || "Falha de conexão. Tente de novo.", "erro"); }
@@ -599,7 +612,7 @@ $("publicar").addEventListener("click", async () => {
   salvarCfg(); ocupado(true);
   $("publicar").textContent = editando ? "Editando..." : "Publicando...";
   try {
-    if (arquivoSel) { status("Enviando o arquivo..."); await subirArquivo(arquivoSel); }
+    if (arquivoSel) { status("Enviando o arquivo..."); await comRetry(() => subirArquivo(arquivoSel)); }
     status("Atualizando a lista do site...");
     const entrada = dados();
     const original = editando ? editando.url : entrada.url;
@@ -607,7 +620,7 @@ $("publicar").addEventListener("click", async () => {
     let extra = "";
     if (editando && original !== entrada.url && !nova.some(d => d.url === original)) {
       const nome = nomeDoArquivo(original);
-      if (nome) { try { await apagarArquivo(nome); } catch { extra = " O arquivo antigo não pôde ser apagado."; } }
+      if (nome) { try { await comRetry(() => apagarArquivo(nome)); } catch { extra = " O arquivo antigo não pôde ser apagado."; } }
     }
     if (editando) {
       editando.url = entrada.url;
@@ -746,12 +759,15 @@ async function apagarDownload(d){
   if (!v(gh.token)) return statusLista("Cole o token do GitHub.", "erro");
   ocupado(true); statusLista("Apagando...");
   try {
-    const r = await lerLista();
-    const nova = r.lista.filter(x => x.url !== d.url);
-    await gravarLista(r.api, nova, r.sha, "Remove " + d.nome + " de downloads.json");
+    const nova = await comRetry(async () => {
+      const r = await lerLista();
+      const n = r.lista.filter(x => x.url !== d.url);
+      await gravarLista(r.api, n, r.sha, "Remove " + d.nome + " de downloads.json");
+      return n;
+    });
     let msg = "Cartão apagado.";
     if (nome && !nova.some(x => x.url === d.url)) {
-      try { msg = (await apagarArquivo(nome)) ? "Cartão e arquivo apagados." : "Cartão apagado. O arquivo já não estava no GitHub."; }
+      try { msg = (await comRetry(() => apagarArquivo(nome))) ? "Cartão e arquivo apagados." : "Cartão apagado. O arquivo já não estava no GitHub."; }
       catch (err) { msg = "Cartão apagado, mas o arquivo não pôde ser apagado: " + err.message; }
     }
     if (editando && editando.url === d.url) sairEdicao();
