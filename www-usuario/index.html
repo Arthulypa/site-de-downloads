@@ -122,6 +122,16 @@ footer{margin-top:56px;font-size:.92rem;opacity:.75}
 .voltar{color:var(--cobalto);font-weight:600}
 .pcard{background:var(--branco);border:var(--borda);box-shadow:var(--sombra);max-width:720px;margin-top:8px}
 .pcard h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:clamp(2rem,7vw,3rem);line-height:1;letter-spacing:-.03em;margin:0 0 12px}
+
+.auth-corpo{padding:24px}
+.auth-corpo h3{margin:0 0 8px;font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:1.7rem}
+.auth-corpo p{margin:0 0 16px}
+.auth-corpo input[type=password]{font:inherit;color:var(--tinta);background:var(--papel);border:var(--borda);padding:10px 12px;width:100%;border-radius:0;margin-bottom:12px}
+.lembrar{display:flex;align-items:center;gap:9px;font-weight:600;margin:4px 0 16px}
+.lembrar input{width:18px;height:18px}
+.auth-erro{margin:0 0 12px;background:#ffd9d9;color:#7a1515;border:2px solid currentColor;padding:8px 10px;font-weight:600}
+.auth-erro[hidden]{display:none}
+
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -159,6 +169,28 @@ footer{margin-top:56px;font-size:.92rem;opacity:.75}
       <a id="m-abrir" class="btn sec" href="#" target="_blank" rel="noopener" hidden>Abrir página</a>
       <button id="m-copiar-pag" class="btn sec" type="button" hidden>Copiar link da página</button>
       <button id="m-fechar" class="btn sec" type="button">Fechar</button>
+    </div>
+  </div>
+</dialog>
+
+
+
+<dialog id="senha-modal" aria-labelledby="senha-t">
+  <div class="auth-corpo">
+    <h3 id="senha-t">Conteúdo protegido</h3>
+    <p id="senha-msg">Digite a senha para continuar.</p>
+    <label class="campo" style="display:flex;flex-direction:column;gap:6px;font-weight:600">
+      Senha
+      <input id="senha-input" type="password" autocomplete="current-password">
+    </label>
+    <p id="senha-erro" class="auth-erro" hidden>Senha incorreta.</p>
+    <label class="lembrar">
+      <input id="senha-lembrar" type="checkbox">
+      Lembrar neste dispositivo por 10 dias
+    </label>
+    <div class="acoes">
+      <button id="senha-ok" class="btn" type="button">Continuar</button>
+      <button id="senha-cancelar" class="btn sec" type="button">Cancelar</button>
     </div>
   </div>
 </dialog>
@@ -297,6 +329,60 @@ menuLista.addEventListener("click", e => {
 const ID = new URLSearchParams(location.search).get("d");
 const secPagina = document.getElementById("pagina");
 
+const senhaModal = document.getElementById("senha-modal");
+const senhaInput = document.getElementById("senha-input");
+const senhaLembrar = document.getElementById("senha-lembrar");
+const senhaErro = document.getElementById("senha-erro");
+let senhaResolve = null;
+let senhaAtual = null;
+
+async function sha256(texto){
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(texto));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,"0")).join("");
+}
+function authKey(d){ return "download-auth:" + String(d.id || d.url); }
+function autorizado(d){
+  try {
+    const x = JSON.parse(localStorage.getItem(authKey(d)) || "null");
+    return !!x && x.expira > Date.now() && x.hash === d.senhaHash;
+  } catch { return false; }
+}
+function lembrarAuth(d, hash){
+  try { localStorage.setItem(authKey(d), JSON.stringify({hash, expira:Date.now()+10*24*60*60*1000})); } catch {}
+}
+function esquecerAuth(d){
+  try { localStorage.removeItem(authKey(d)); } catch {}
+}
+function pedirSenha(d){
+  return new Promise(resolve => {
+    senhaResolve = resolve; senhaAtual = d;
+    senhaInput.value = ""; senhaLembrar.checked = false; senhaErro.hidden = true;
+    senhaModal.showModal();
+    setTimeout(() => senhaInput.focus(), 50);
+  });
+}
+async function exigirAcesso(d){
+  if (!d.senhaHash) return true;
+  if (autorizado(d)) return true;
+  const ok = await pedirSenha(d);
+  return ok;
+}
+senhaModal.addEventListener("click", e => { if (e.target === senhaModal) { senhaModal.close(); if (senhaResolve) { senhaResolve(false); senhaResolve=null; } } });
+document.getElementById("senha-cancelar").addEventListener("click", () => {
+  senhaModal.close(); if (senhaResolve) { senhaResolve(false); senhaResolve=null; }
+});
+document.getElementById("senha-ok").addEventListener("click", async () => {
+  if (!senhaAtual) return;
+  const hash = await sha256(senhaInput.value);
+  if (hash !== senhaAtual.senhaHash) { senhaErro.hidden = false; senhaInput.select(); return; }
+  if (senhaLembrar.checked) lembrarAuth(senhaAtual, hash);
+  senhaModal.close();
+  if (senhaResolve) { senhaResolve(true); senhaResolve=null; }
+});
+senhaInput.addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("senha-ok").click(); });
+
+
+
 function copiar(btn, texto){
   const antes = btn.textContent;
   (navigator.clipboard ? navigator.clipboard.writeText(texto) : Promise.reject())
@@ -305,7 +391,7 @@ function copiar(btn, texto){
     .finally(() => setTimeout(() => { btn.textContent = antes; }, 2000));
 }
 
-function rotear(carregado){
+async function rotear(carregado){
   if (!ID) return;
   document.getElementById("barra").hidden = true;
   document.getElementById("sec-titulo").hidden = true;
@@ -321,6 +407,10 @@ function rotear(carregado){
     return;
   }
   document.title = d.nome + " · Downloads";
+  if (!(await exigirAcesso(d))) {
+    secPagina.innerHTML = '<div class="vazio"><p>Este download está protegido por senha.</p><a class="btn" href="./">Voltar aos downloads</a></div>';
+    return;
+  }
   secPagina.innerHTML = `
     ${d.voltar !== false ? '<p><a class="voltar" href="./">Voltar aos downloads</a></p>' : ""}
     <article class="pcard">
@@ -356,8 +446,9 @@ if (JSON_URL) {
     .finally(() => rotear(true));
 }
 
-function abrir(i){
+async function abrir(i){
   const d = LISTA[i];
+  if (!(await exigirAcesso(d))) return;
   document.getElementById("m-titulo").textContent = d.nome;
   document.getElementById("m-meta").innerHTML = [d.tipo, d.versao, d.tamanho, d.data].filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join("");
   mDesc.textContent = d.detalhes || d.descricao;
