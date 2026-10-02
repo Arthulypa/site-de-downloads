@@ -111,6 +111,27 @@ ol li{margin-bottom:4px}
 .sub .trilho{background:var(--branco)}
 .sub .alterna input:checked + .trilho{background:var(--cobalto)}
 .dica{display:block;margin-top:8px;font-size:.92rem;opacity:.8}
+.btn.perigo{background:#FF5C5C;color:#17143A}
+.acoes{display:flex;gap:12px;flex-wrap:wrap}
+.editando{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:0;padding:10px 12px;background:var(--manteiga);color:#17143A;border:3px solid #17143A;font-weight:600}
+.editando .btn{padding:6px 12px;font-size:.95rem;box-shadow:3px 3px 0 #17143A}
+#lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:22px}
+#lista .vazio{grid-column:1/-1}
+.card-ed{display:flex;flex-direction:column;gap:8px;text-align:left;font:inherit;color:var(--tinta);background:var(--papel);border:var(--borda);box-shadow:4px 4px 0 var(--tinta);padding:16px;cursor:pointer;transition:transform .1s,box-shadow .1s}
+.card-ed:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--tinta)}
+.card-ed .t{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.card-ed .v{font-size:.95rem;opacity:.8}
+.card-ed strong{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;font-size:1.35rem;line-height:1.1;letter-spacing:-.02em}
+.card-ed .d{flex:1}
+.card-ed.ativo{background:var(--manteiga);color:#17143A;box-shadow:6px 6px 0 var(--tinta);transform:translate(-2px,-2px)}
+.card-ed:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.editando .acoes{align-items:center}
+.vazio{margin:0;padding:18px;border:var(--borda);border-style:dashed;text-align:center}
+dialog{border:var(--borda);box-shadow:10px 10px 0 var(--tinta);background:var(--branco);color:var(--tinta);padding:0;max-width:min(440px,94vw);width:100%}
+dialog::backdrop{background:rgba(23,20,58,.6)}
+.conf-corpo{padding:24px 28px 28px}
+.conf-corpo h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:1.6rem;line-height:1.1;letter-spacing:-.02em;margin:0 0 10px}
+.conf-corpo p{margin:0 0 18px}
 @media (prefers-reduced-motion:reduce){.trilho,.trilho::after{transition:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -123,9 +144,25 @@ ol li{margin-bottom:4px}
     <a href="../">Ver o site</a>
   </header>
 
+  <section class="painel" id="painel-lista" aria-labelledby="h-lista" style="margin-bottom:32px">
+    <h2 id="h-lista">Downloads publicados</h2>
+    <p style="margin:0">Clique em um cartão para editar. Dá para mudar tudo, trocar o arquivo ou apagar o cartão e o arquivo. Depois toque em <strong>Salvar alterações</strong>.</p>
+    <div><button class="btn sec" id="carregar" type="button">Carregar lista</button></div>
+    <p class="status" id="status-lista" hidden></p>
+    <div id="lista"><p class="vazio">Cole o token do GitHub no painel "Enviar para o GitHub" e toque em Carregar lista.</p></div>
+  </section>
+
   <div class="layout">
     <section class="painel" aria-labelledby="h-form">
       <h2 id="h-form">Dados do download</h2>
+
+      <div class="editando" id="edit-aviso" hidden>
+        <span id="edit-txt"></span>
+        <span class="acoes">
+          <button class="btn perigo" id="edit-apagar" type="button">Apagar</button>
+          <button class="btn sec" id="edit-sair" type="button">Sair da edição</button>
+        </span>
+      </div>
 
       <label class="arquivo" for="arq">
         <span id="arq-txt">Escolher arquivo (.zip, .rar ou .7z)</span>
@@ -241,7 +278,19 @@ ol li{margin-bottom:4px}
       </section>
     </div>
   </div>
+
 </div>
+
+<dialog id="conf" aria-labelledby="conf-t">
+  <div class="conf-corpo">
+    <h3 id="conf-t">Apagar download?</h3>
+    <p id="conf-txt"></p>
+    <div class="acoes">
+      <button class="btn perigo" id="conf-ok" type="button">Apagar</button>
+      <button class="btn sec" id="conf-nao" type="button">Cancelar</button>
+    </div>
+  </div>
+</dialog>
 
 <script>
 const $ = id => document.getElementById(id);
@@ -249,6 +298,7 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 const EXT = { zip: "ZIP", rar: "RAR", "7z": "7Z" };
 let nomeArquivo = "";
 let arquivoSel = null;
+let editando = null;
 
 $("data").value = new Date().toLocaleDateString("pt-BR");
 
@@ -267,7 +317,7 @@ function dados(){
   const arq = nomeArquivo || ("arquivo." + tipo.toLowerCase());
   return {
     nome: $("nome").value.trim() || "Nome do arquivo",
-    id: slug((nomeArquivo || $("nome").value.trim() || "download").replace(/\.[^.]+$/, "")),
+    id: editando ? editando.id : slug((nomeArquivo || $("nome").value.trim() || "download").replace(/\.[^.]+$/, "")),
     descricao: $("descricao").value.trim() || "Uma frase explicando o que é.",
     versao: $("versao").value.trim(),
     tipo,
@@ -278,7 +328,7 @@ function dados(){
     pagina: $("pagina").checked,
     abrir: $("abrir").checked,
     voltar: $("voltar").checked,
-    url: linkRaw(arq)
+    url: (editando && !nomeArquivo) ? editando.url : linkRaw(arq)
   };
 }
 
@@ -387,13 +437,13 @@ const b64ParaTexto = b => new TextDecoder().decode(Uint8Array.from(atob(b.replac
 
 function validar(){
   const f = arquivoSel;
-  if (!f) return "Escolha o arquivo primeiro.";
-  if (!EXT[f.name.split(".").pop().toLowerCase()]) return "Só são aceitos arquivos .zip, .rar ou .7z.";
+  if (!f && !editando) return "Escolha o arquivo primeiro.";
+  if (f && !EXT[f.name.split(".").pop().toLowerCase()]) return "Só são aceitos arquivos .zip, .rar ou .7z.";
   if (!v(gh.token)) return "Cole o token do GitHub.";
-  if (f.size > 95 * 1024 * 1024) return "Arquivo acima de 95 MB. O GitHub recusa arquivos acima de 100 MB no repositório; use uma Release.";
+  if (f && f.size > 95 * 1024 * 1024) return "Arquivo acima de 95 MB. O GitHub recusa arquivos acima de 100 MB no repositório; use uma Release.";
   return "";
 }
-const ocupado = b => { $("enviar").disabled = b; $("publicar").disabled = b; };
+const ocupado = b => { $("enviar").disabled = b; $("publicar").disabled = b; $("edit-apagar").disabled = b; document.querySelectorAll("#lista button").forEach(x => x.disabled = b); };
 
 async function subirArquivo(f){
   const c = cfg(), h = hdrs();
@@ -415,27 +465,27 @@ async function subirArquivo(f){
   return !!sha;
 }
 
-async function publicarLista(entrada){
+async function lerLista(){
   const c = cfg(), h = hdrs();
   const api = `https://api.github.com/repos/${c.user}/${c.repo}/contents/downloads.json`;
-  let lista = [], sha;
   const ex = await fetch(`${api}?ref=${encodeURIComponent(c.branch)}`, { headers: h });
-  if (ex.ok) {
-    const j = await ex.json();
-    sha = j.sha;
-    try { lista = JSON.parse(b64ParaTexto(j.content)); }
-    catch { throw new Error("O downloads.json no GitHub está com formato inválido. Corrija ou apague esse arquivo e tente de novo."); }
-    if (!Array.isArray(lista)) lista = [];
-  } else if (ex.status !== 404) throw await erroGH(ex);
+  if (ex.status === 404) return { api, lista: [], sha: undefined };
+  if (!ex.ok) throw await erroGH(ex);
+  const j = await ex.json();
+  let lista;
+  try { lista = JSON.parse(b64ParaTexto(j.content)); }
+  catch { throw new Error("O downloads.json no GitHub está com formato inválido. Corrija ou apague esse arquivo e tente de novo."); }
+  if (!Array.isArray(lista)) lista = [];
+  return { api, lista, sha: j.sha };
+}
 
-  const pos = lista.findIndex(d => d.url === entrada.url);
-  if (pos >= 0) lista[pos] = entrada; else lista.unshift(entrada);
-
+async function gravarLista(api, lista, sha, mensagem){
+  const c = cfg();
   const r = await fetch(api, {
     method: "PUT",
-    headers: { ...h, "Content-Type": "application/json" },
+    headers: { ...hdrs(), "Content-Type": "application/json" },
     body: JSON.stringify({
-      message: "Atualiza downloads.json",
+      message: mensagem,
       content: textoParaB64(JSON.stringify(lista, null, 2) + "\n"),
       branch: c.branch, ...(sha ? { sha } : {})
     })
@@ -443,9 +493,45 @@ async function publicarLista(entrada){
   if (!r.ok) throw await erroGH(r);
 }
 
+async function publicarLista(entrada, original){
+  const r = await lerLista();
+  let lista = r.lista;
+  let pos = lista.findIndex(d => d.url === (original || entrada.url));
+  if (pos < 0) { lista.unshift(entrada); pos = 0; } else lista[pos] = entrada;
+  lista = lista.filter((d, k) => k === pos || d.url !== entrada.url);
+  await gravarLista(r.api, lista, r.sha, "Atualiza downloads.json");
+  return lista;
+}
+
+function nomeDoArquivo(url){
+  const c = cfg();
+  const base = `https://github.com/${c.user}/${c.repo}/raw/refs/heads/${c.branch}/`;
+  if (!String(url).startsWith(base)) return null;
+  let n;
+  try { n = decodeURIComponent(url.slice(base.length)); } catch { return null; }
+  return /^[^/]+\.(zip|rar|7z)$/i.test(n) ? n : null;
+}
+
+async function apagarArquivo(nome){
+  const c = cfg(), h = hdrs();
+  const api = `https://api.github.com/repos/${c.user}/${c.repo}/contents/${encodeURI(nome)}`;
+  const ex = await fetch(`${api}?ref=${encodeURIComponent(c.branch)}`, { headers: h });
+  if (ex.status === 404) return false;
+  if (!ex.ok) throw await erroGH(ex);
+  const sha = (await ex.json()).sha;
+  const r = await fetch(api, {
+    method: "DELETE",
+    headers: { ...h, "Content-Type": "application/json" },
+    body: JSON.stringify({ message: "Remove " + nome, sha, branch: c.branch })
+  });
+  if (!r.ok) throw await erroGH(r);
+  return true;
+}
+
 $("enviar").addEventListener("click", async () => {
   const erro = validar();
   if (erro) return status(erro, "erro");
+  if (!arquivoSel) return status("Escolha o arquivo primeiro.", "erro");
   salvarCfg(); ocupado(true);
   status("Enviando... arquivos grandes podem demorar.");
   try {
@@ -460,15 +546,161 @@ $("publicar").addEventListener("click", async () => {
   const erro = validar();
   if (erro) return status(erro, "erro");
   salvarCfg(); ocupado(true);
+  $("publicar").textContent = editando ? "Editando..." : "Publicando...";
   try {
-    status("Enviando o arquivo...");
-    await subirArquivo(arquivoSel);
+    if (arquivoSel) { status("Enviando o arquivo..."); await subirArquivo(arquivoSel); }
     status("Atualizando a lista do site...");
-    await publicarLista(dados());
+    const entrada = dados();
+    const original = editando ? editando.url : entrada.url;
+    const nova = await publicarLista(entrada, original);
+    let extra = "";
+    if (editando && original !== entrada.url && !nova.some(d => d.url === original)) {
+      const nome = nomeDoArquivo(original);
+      if (nome) { try { await apagarArquivo(nome); } catch { extra = " O arquivo antigo não pôde ser apagado."; } }
+    }
+    if (editando) {
+      editando.url = entrada.url;
+      let arq = String(entrada.url).split("/").pop();
+      try { arq = decodeURIComponent(arq); } catch {}
+      arquivoSel = null; nomeArquivo = ""; $("arq").value = "";
+      $("arq-txt").textContent = "Trocar arquivo (opcional)";
+      $("arq-nome").textContent = "Atual: " + arq;
+    }
     linkPronto = true; estadoLink();
-    status("Publicado. O cartão aparece no site em até uns 5 minutos (o GitHub guarda a lista em cache por um tempo).", "ok");
-  } catch (e) { status(e.message || "Falha de conexão. Tente de novo.", "erro"); }
+    listaAtual = nova; listaCarregada = true; desenharLista();
+    $("publicar").textContent = "Salvo!";
+    setTimeout(estadoEdicao, 2500);
+    status("Salvo! O cartão atualiza no site em até uns 5 minutos (o GitHub guarda a lista em cache)." + extra, "ok");
+  } catch (e) { estadoEdicao(); status(e.message || "Falha de conexão. Tente de novo.", "erro"); }
   finally { ocupado(false); }
+});
+
+/* ---------- Editar e apagar ---------- */
+let listaAtual = [], listaCarregada = false;
+
+function statusLista(msg, tipo){
+  const el = $("status-lista");
+  el.hidden = !msg;
+  el.textContent = msg || "";
+  el.className = "status" + (tipo ? " " + tipo : "");
+}
+
+function desenharLista(){
+  const el = $("lista");
+  if (!listaAtual.length) { el.innerHTML = '<p class="vazio">Nenhum download publicado ainda.</p>'; return; }
+  el.innerHTML = listaAtual.map((d, i) => `
+    <button type="button" class="card-ed${editando && editando.url === d.url ? " ativo" : ""}" data-ed="${i}" aria-label="Editar ${esc(d.nome)}">
+      <span class="t"><span class="tipo">${esc(d.tipo)}</span><span class="v">${esc(d.versao)}</span></span>
+      <strong>${esc(d.nome)}</strong>
+      <span class="d">${esc(d.descricao)}</span>
+      <span class="meta"><span>${esc(d.tamanho)}</span><span>${esc(d.data)}</span></span>
+    </button>`).join("");
+}
+
+async function carregarLista(){
+  if (!v(gh.token)) return statusLista("Cole o token do GitHub (no painel Enviar para o GitHub) para carregar a lista.", "erro");
+  const btn = $("carregar");
+  btn.disabled = true; btn.textContent = "Carregando...";
+  statusLista("");
+  try {
+    const r = await lerLista();
+    listaAtual = r.lista; listaCarregada = true;
+    desenharLista();
+  } catch (e) { statusLista(e.message || "Falha de conexão. Tente de novo.", "erro"); }
+  finally { btn.disabled = false; btn.textContent = "Atualizar lista"; }
+}
+$("carregar").addEventListener("click", carregarLista);
+
+function limparForm(){
+  ["nome", "descricao", "detalhes", "tamanho", "imagem"].forEach(id => { $(id).value = ""; });
+  $("versao").value = "v1.0.0";
+  $("data").value = new Date().toLocaleDateString("pt-BR");
+  document.querySelector('input[name="tipo"][value="ZIP"]').checked = true;
+  $("pagina").checked = false; $("abrir").checked = false; $("voltar").checked = true;
+  nomeArquivo = ""; arquivoSel = null; $("arq").value = "";
+  $("arq-txt").textContent = "Escolher arquivo (.zip, .rar ou .7z)";
+  $("arq-nome").textContent = "";
+  $("aviso").hidden = true;
+  linkPronto = false;
+}
+
+function estadoEdicao(){
+  $("edit-aviso").hidden = !editando;
+  if (editando) $("edit-txt").textContent = "Editando: " + ($("nome").value.trim() || editando.id);
+  $("publicar").textContent = editando ? "Salvar alterações" : "Publicar no site";
+}
+
+function sairEdicao(){
+  editando = null;
+  limparForm(); estadoEdicao(); estadoLink(); atualizar();
+  if (listaCarregada) desenharLista();
+}
+$("edit-sair").addEventListener("click", sairEdicao);
+
+function editar(i){
+  const d = listaAtual[i];
+  limparForm();
+  $("nome").value = d.nome || ""; $("descricao").value = d.descricao || ""; $("detalhes").value = d.detalhes || "";
+  $("versao").value = d.versao || ""; $("tamanho").value = d.tamanho || ""; $("data").value = d.data || ""; $("imagem").value = d.imagem || "";
+  const r = document.querySelector(`input[name="tipo"][value="${d.tipo}"]`);
+  if (r) r.checked = true;
+  $("pagina").checked = !!d.pagina; $("abrir").checked = !!d.abrir; $("voltar").checked = d.voltar !== false;
+  let arq = String(d.url || "").split("/").pop();
+  try { arq = decodeURIComponent(arq); } catch {}
+  $("arq-txt").textContent = "Trocar arquivo (opcional)";
+  $("arq-nome").textContent = "Atual: " + arq;
+  editando = { url: d.url, id: d.id || slug(arq.replace(/\.[^.]+$/, "")) };
+  linkPronto = !!d.pagina;
+  estadoEdicao(); estadoLink(); atualizar();
+  if (listaCarregada) desenharLista();
+  $("h-form").scrollIntoView({ behavior: "smooth" });
+}
+
+function confirmar(texto){
+  return new Promise(ok => {
+    const dlg = $("conf");
+    $("conf-txt").textContent = texto;
+    $("conf-ok").onclick = () => { dlg.close(); ok(true); };
+    $("conf-nao").onclick = () => { dlg.close(); ok(false); };
+    dlg.oncancel = () => ok(false);
+    dlg.showModal();
+  });
+}
+
+async function apagarDownload(d){
+  const nome = nomeDoArquivo(d.url);
+  const ok = await confirmar(
+    `Isso apaga o cartão "${d.nome}" do site` +
+    (nome ? ` e o arquivo ${nome} do GitHub.` : ". O arquivo está em outro lugar e não será apagado.") +
+    " Não dá para desfazer por aqui."
+  );
+  if (!ok) return;
+  if (!v(gh.token)) return statusLista("Cole o token do GitHub.", "erro");
+  ocupado(true); statusLista("Apagando...");
+  try {
+    const r = await lerLista();
+    const nova = r.lista.filter(x => x.url !== d.url);
+    await gravarLista(r.api, nova, r.sha, "Remove " + d.nome + " de downloads.json");
+    let msg = "Cartão apagado.";
+    if (nome && !nova.some(x => x.url === d.url)) {
+      try { msg = (await apagarArquivo(nome)) ? "Cartão e arquivo apagados." : "Cartão apagado. O arquivo já não estava no GitHub."; }
+      catch (err) { msg = "Cartão apagado, mas o arquivo não pôde ser apagado: " + err.message; }
+    }
+    if (editando && editando.url === d.url) sairEdicao();
+    listaAtual = nova; desenharLista();
+    statusLista(msg + " O site atualiza em até uns 5 minutos.", "ok");
+    $("painel-lista").scrollIntoView({ behavior: "smooth" });
+  } catch (err) { statusLista(err.message || "Falha de conexão. Tente de novo.", "erro"); }
+  finally { ocupado(false); }
+}
+
+$("lista").addEventListener("click", e => {
+  const ed = e.target.closest("[data-ed]");
+  if (ed) editar(+ed.dataset.ed);
+});
+$("edit-apagar").addEventListener("click", () => {
+  const d = editando && listaAtual.find(x => x.url === editando.url);
+  if (d) apagarDownload(d);
 });
 
 let linkPronto = false;
@@ -492,6 +724,8 @@ $("copiar-pag").addEventListener("click", async () => {
 estadoLink();
 
 atualizar();
+if (v(gh.token)) carregarLista();
+gh.token.addEventListener("change", () => { if (!listaCarregada && v(gh.token)) carregarLista(); });
 </script>
 </body>
 </html>
