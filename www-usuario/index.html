@@ -3,491 +3,920 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Meus Downloads</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
+<meta name="robots" content="noindex">
+<title>Painel dev · Downloads</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛠️</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Familjen+Grotesk:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --papel:#E8E4F5;
-  --tinta:#17143A;
-  --cobalto:#3A3AF0;
-  --manteiga:#FFD84A;
-  --branco:#FFFFFF;
-  --borda:3px solid var(--tinta);
-  --sombra:6px 6px 0 var(--tinta);
+  --papel:#E8E4F5;--tinta:#17143A;--cobalto:#3A3AF0;--manteiga:#FFD84A;--branco:#FFFFFF;
+  --borda:3px solid var(--tinta);--sombra:6px 6px 0 var(--tinta);
 }
 @media (prefers-color-scheme:dark){
   :root{--papel:#17143A;--tinta:#F2EFFF;--branco:#241F5C;--cobalto:#7B7BFF;--manteiga:#FFD84A}
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
 body{
-  margin:0;min-height:100vh;
-  background:var(--papel);color:var(--tinta);
-  font-family:"Familjen Grotesk",system-ui,sans-serif;font-size:1.05rem;line-height:1.55;
+  margin:0;min-height:100vh;background:var(--papel);color:var(--tinta);
+  font-family:"Familjen Grotesk",system-ui,sans-serif;font-size:1.05rem;line-height:1.5;
   background-image:radial-gradient(color-mix(in srgb,var(--tinta) 14%,transparent) 1.5px,transparent 1.5px);
   background-size:22px 22px;
 }
-.wrap{max-width:960px;margin:0 auto;padding:48px 20px 72px}
-header{margin-bottom:44px}
+.wrap{max-width:1040px;margin:0 auto;padding:40px 20px 72px}
 h1{
   font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;
-  font-size:clamp(3.2rem,12vw,7rem);line-height:.9;letter-spacing:-.04em;margin:0 0 18px;
+  font-size:clamp(2.6rem,9vw,5rem);line-height:.92;letter-spacing:-.04em;margin:0 0 14px;
 }
 h1 .sticker{
-  display:inline-block;transform:rotate(-4deg);
-  background:var(--manteiga);color:#17143A;border:var(--borda);border-color:#17143A;
-  padding:0 .18em;margin-left:.1em;box-shadow:5px 5px 0 var(--tinta);
+  display:inline-block;transform:rotate(-4deg);background:var(--manteiga);color:#17143A;
+  border:3px solid #17143A;padding:0 .18em;margin-left:.1em;box-shadow:5px 5px 0 var(--tinta);
 }
-header p{max-width:46ch;margin:0;font-size:1.15rem}
-.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:28px}
-.cartao{
-  background:var(--branco);border:var(--borda);box-shadow:var(--sombra);
-  padding:22px;display:flex;flex-direction:column;gap:12px;
-  cursor:pointer;transition:transform .1s,box-shadow .1s;
+.topo{margin-bottom:32px}
+.topo p{margin:0 0 10px;max-width:56ch}
+.topo a{color:var(--cobalto);font-weight:600}
+.layout{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:32px;align-items:start}
+.painel{background:var(--branco);border:var(--borda);box-shadow:var(--sombra);padding:24px;display:flex;flex-direction:column;gap:16px}
+h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;font-size:1.5rem;letter-spacing:-.02em;margin:0}
+label.campo{display:flex;flex-direction:column;gap:6px;font-weight:600}
+label.campo small{font-weight:400;opacity:.75}
+input[type=text],textarea{
+  font:inherit;font-weight:400;color:var(--tinta);background:var(--papel);
+  border:var(--borda);padding:10px 12px;width:100%;border-radius:0;
 }
-.cartao:hover{transform:translate(-2px,-2px);box-shadow:8px 8px 0 var(--tinta)}
-.topo{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.tipo{
-  font-weight:600;font-size:.9rem;background:var(--cobalto);color:#fff;
-  padding:2px 10px;border:2px solid var(--tinta);border-radius:99px;
+textarea{min-height:110px;resize:vertical}
+.duas{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+:focus-visible{outline:4px solid var(--cobalto);outline-offset:2px}
+
+.tipos{display:flex;gap:10px;flex-wrap:wrap}
+.tipos label{cursor:pointer}
+.tipos input{position:absolute;opacity:0;pointer-events:none}
+.tipos span{
+  display:inline-block;padding:8px 18px;border:var(--borda);background:var(--papel);font-weight:600;
+  box-shadow:3px 3px 0 var(--tinta);
 }
-.versao{font-size:.95rem;opacity:.8}
-.cartao h2{
-  font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;
-  font-size:1.6rem;line-height:1.1;letter-spacing:-.02em;margin:0;
+.tipos input:checked + span{background:var(--cobalto);color:#fff}
+.tipos input:focus-visible + span{outline:4px solid var(--cobalto);outline-offset:2px}
+
+.arquivo{
+  border:var(--borda);border-style:dashed;padding:18px;text-align:center;cursor:pointer;background:var(--papel);
+  display:block;font-weight:600;
 }
-.cartao p{margin:0;flex:1}
-.meta{font-size:.92rem;opacity:.8;display:flex;gap:14px;flex-wrap:wrap}
+.arquivo input{display:none}
+.arquivo small{display:block;font-weight:400;opacity:.8;margin-top:4px;word-break:break-all}
+.aviso{margin:0;font-size:.95rem;background:var(--manteiga);color:#17143A;border:var(--borda);border-color:#17143A;padding:8px 12px}
+.aviso[hidden]{display:none}
+
 .btn{
-  font:inherit;font-weight:600;font-size:1.05rem;cursor:pointer;text-decoration:none;text-align:center;
-  display:inline-block;padding:12px 18px;border:var(--borda);
-  background:var(--manteiga);color:#17143A;border-color:var(--tinta);
+  font:inherit;font-weight:600;font-size:1.05rem;cursor:pointer;text-align:center;
+  padding:12px 18px;border:3px solid var(--tinta);background:var(--manteiga);color:#17143A;
   box-shadow:4px 4px 0 var(--tinta);transition:transform .08s,box-shadow .08s;
 }
 .btn:hover{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--tinta)}
 .btn:active{transform:translate(4px,4px);box-shadow:0 0 0 var(--tinta)}
-.btn.sec{background:var(--branco);color:var(--tinta)}
-:focus-visible{outline:4px solid var(--cobalto);outline-offset:3px}
 
-dialog{
-  border:var(--borda);box-shadow:10px 10px 0 var(--tinta);background:var(--branco);color:var(--tinta);
-  padding:0;max-width:min(560px,94vw);width:100%;max-height:90vh;overflow:auto;
+
+
+.senha-box{border:3px solid var(--tinta);padding:14px;background:var(--papel);display:flex;flex-direction:column;gap:10px}
+.senha-box[hidden]{display:none}
+.senha-box input[type=password]{font:inherit;color:var(--tinta);background:var(--branco);border:var(--borda);padding:10px 12px;width:100%;border-radius:0}
+
+/* cartão de prévia (igual ao do site) */
+.cartao{background:var(--papel);border:var(--borda);box-shadow:var(--sombra);padding:20px;display:flex;flex-direction:column;gap:10px}
+.cartao .t{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.tipo{font-weight:600;font-size:.9rem;background:var(--cobalto);color:#fff;padding:2px 10px;border:2px solid var(--tinta);border-radius:99px}
+.cartao h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;font-size:1.5rem;line-height:1.1;letter-spacing:-.02em;margin:0}
+.cartao p{margin:0}
+.meta{font-size:.92rem;opacity:.8;display:flex;gap:14px;flex-wrap:wrap}
+
+pre{
+  margin:0;padding:14px;background:var(--papel);border:var(--borda);overflow-x:auto;
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.88rem;line-height:1.5;white-space:pre;
 }
-dialog::backdrop{background:rgba(23,20,58,.6)}
-dialog[open]{animation:pop .18s ease-out}
-@keyframes pop{from{transform:scale(.94) rotate(-1deg);opacity:0}to{transform:none;opacity:1}}
-dialog h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:1.7rem;line-height:1.1;margin:0 0 8px;letter-spacing:-.02em}
-dialog p{margin:0 0 18px}
-.acoes{display:flex;gap:12px;flex-wrap:wrap}
-.m-previa{border-bottom:var(--borda);background:var(--cobalto);aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.m-previa img{width:100%;height:100%;object-fit:cover;display:block}
-.m-previa span{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:clamp(3rem,16vw,6rem);letter-spacing:-.04em;color:#fff}
-.m-corpo{padding:24px 28px 28px}
-.m-corpo .meta{margin-bottom:14px}
-.m-detalhes{white-space:pre-line}
-.vazio{border:var(--borda);border-style:dashed;padding:32px;text-align:center;background:var(--branco)}
-footer{margin-top:56px;font-size:.92rem;opacity:.75}
+ol{margin:0;padding-left:1.2em}
+ol li{margin-bottom:4px}
+.btn[disabled]{opacity:.55;cursor:not-allowed;box-shadow:none;transform:none}
+.status{margin:0;padding:10px 12px;border:var(--borda);background:var(--papel);font-size:.95rem}
+.status.ok{background:var(--manteiga);color:#17143A;border-color:#17143A}
+.status.erro{background:#FF5C5C;color:#17143A;border-color:#17143A}
+.status[hidden]{display:none}
+.lembrar{display:flex;gap:8px;align-items:center;font-size:.95rem}
+.lembrar input{width:20px;height:20px;accent-color:var(--cobalto)}
+.alterna{position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer;font-weight:600}
+.alterna small{display:block;font-weight:400;opacity:.8;margin-top:2px}
+.alterna input{position:absolute;opacity:0;pointer-events:none}
+.trilho{flex:none;position:relative;width:62px;height:34px;border:var(--borda);background:var(--papel);box-shadow:3px 3px 0 var(--tinta);transition:background .15s}
+.trilho::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;background:var(--tinta);transition:transform .15s,background .15s}
+.alterna input:checked + .trilho{background:var(--cobalto)}
+.alterna input:checked + .trilho::after{transform:translateX(28px);background:var(--manteiga)}
+.alterna input:focus-visible + .trilho{outline:4px solid var(--cobalto);outline-offset:2px}
 [hidden]{display:none!important}
-.menu-btn{font:inherit;font-weight:600;font-size:1.05rem;cursor:pointer;display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border:var(--borda);border-color:var(--tinta);background:var(--manteiga);color:#17143A;box-shadow:4px 4px 0 var(--tinta);margin-bottom:28px;transition:transform .08s,box-shadow .08s}
-.menu-btn:hover{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--tinta)}
-.menu-btn:active{transform:translate(4px,4px);box-shadow:0 0 0 var(--tinta)}
-.sec-titulo{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:clamp(1.6rem,5vw,2.2rem);letter-spacing:-.03em;line-height:1.05;margin:0 0 22px}
-#menu{margin:0;inset:0 auto 0 0;height:100vh;height:100dvh;max-height:none;width:min(340px,88vw);max-width:none;border:0;border-right:var(--borda);box-shadow:8px 0 0 var(--tinta)}
-#menu[open]{animation:desliza .2s ease-out}
-@keyframes desliza{from{transform:translateX(-100%)}to{transform:none}}
-.menu-corpo{padding:24px 22px 28px}
-.menu-topo{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}
-.menu-topo h3{margin:0}
-.menu-topo .btn{padding:6px 14px;font-size:.95rem;box-shadow:3px 3px 0 var(--tinta)}
-.menu-topo .btn:hover{box-shadow:1px 1px 0 var(--tinta)}
-.menu-topo .btn:active{box-shadow:0 0 0 var(--tinta)}
-.sec-btn{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;font-weight:600;font-size:1.1rem;color:var(--tinta);background:var(--papel);border:var(--borda);padding:12px 14px;cursor:pointer;box-shadow:4px 4px 0 var(--tinta);transition:transform .08s,box-shadow .08s}
-.sec-btn:hover{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--tinta)}
-.sec-btn[aria-current="true"],.sub-btn[aria-current="true"]{background:var(--manteiga);color:#17143A}
-.sec-item{margin-bottom:16px}
-.sec-linha{display:flex;gap:10px;align-items:stretch}
-.sec-linha .sec-btn{flex:1;width:auto;min-width:0}
-.sec-seta{flex:none;width:48px;display:flex;align-items:center;justify-content:center;border:var(--borda);background:var(--papel);cursor:pointer;box-shadow:4px 4px 0 var(--tinta);transition:transform .08s,box-shadow .08s}
-.sec-seta:hover{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--tinta)}
-.sec-seta .seta{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:10px solid var(--tinta);transition:transform .15s}
-.sec-seta[aria-expanded="true"] .seta{transform:rotate(180deg)}
-.sub-lista{margin:16px 0 0 14px;display:flex;flex-direction:column;gap:12px;border-left:3px solid var(--tinta);padding-left:14px}
-.sub-btn{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;font-weight:600;font-size:1rem;color:var(--tinta);background:var(--papel);border:2px solid var(--tinta);padding:9px 12px;cursor:pointer;box-shadow:3px 3px 0 var(--tinta);transition:transform .08s,box-shadow .08s}
-.sub-btn:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--tinta)}
-.sub-cab{grid-column:1/-1;font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;font-size:1.3rem;letter-spacing:-.02em;margin:10px 0 -8px;display:flex;align-items:center;gap:10px}
-.sec-btn .n,.sub-btn .n,.sub-cab .n{font-size:.9rem;border:2px solid var(--tinta);border-radius:99px;padding:0 9px;background:var(--branco);color:var(--tinta)}
-.voltar{color:var(--cobalto);font-weight:600}
-.pcard{background:var(--branco);border:var(--borda);box-shadow:var(--sombra);max-width:720px;margin-top:8px}
-.pcard h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:clamp(2rem,7vw,3rem);line-height:1;letter-spacing:-.03em;margin:0 0 12px}
-
-.auth-corpo{padding:24px}
-.auth-corpo h3{margin:0 0 8px;font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:1.7rem}
-.auth-corpo p{margin:0 0 16px}
-.auth-corpo input[type=password]{font:inherit;color:var(--tinta);background:var(--papel);border:var(--borda);padding:10px 12px;width:100%;border-radius:0;margin-bottom:12px}
-.lembrar{display:flex;align-items:center;gap:9px;font-weight:600;margin:4px 0 16px}
-.lembrar input{width:18px;height:18px}
-.auth-erro{margin:0 0 12px;background:#ffd9d9;color:#7a1515;border:2px solid currentColor;padding:8px 10px;font-weight:600}
-.auth-erro[hidden]{display:none}
-
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.btn.sec{background:var(--branco);color:var(--tinta)}
+.sub{display:flex;flex-direction:column;gap:16px;padding:16px;border:var(--borda);border-style:dashed;background:var(--papel)}
+.sub .trilho{background:var(--branco)}
+.sub .alterna input:checked + .trilho{background:var(--cobalto)}
+.dica{display:block;margin-top:8px;font-size:.92rem;opacity:.8}
+.btn.perigo{background:#FF5C5C;color:#17143A}
+.acoes{display:flex;gap:12px;flex-wrap:wrap}
+.editando{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:0;padding:10px 12px;background:var(--manteiga);color:#17143A;border:3px solid #17143A;font-weight:600}
+.editando .btn{padding:6px 12px;font-size:.95rem;box-shadow:3px 3px 0 #17143A}
+#lista{display:flex;flex-direction:column;gap:28px}
+.grade-ed{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:22px}
+.grupo-t{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;font-size:1.3rem;letter-spacing:-.02em;margin:0 0 14px;display:flex;align-items:center;gap:10px}
+.grupo-t .n,.sub-t .n{font-family:"Familjen Grotesk",system-ui,sans-serif;font-size:.85rem;font-weight:600;border:2px solid var(--tinta);border-radius:99px;padding:0 9px}
+.sub-t{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;font-size:1.05rem;letter-spacing:-.01em;margin:22px 0 12px;display:flex;align-items:center;gap:8px}
+.sub-t::before{content:"\21B3"}
+.toggle{font:inherit;letter-spacing:inherit;color:inherit;background:none;border:0;padding:0;margin:0;display:flex;align-items:center;gap:12px;width:100%;text-align:left;cursor:pointer}
+.seta{flex:none;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:11px solid var(--tinta);transition:transform .15s}
+.toggle[aria-expanded="false"] .seta{transform:rotate(-90deg)}
+.painel-corpo{display:flex;flex-direction:column;gap:16px}
+.editando .btn:hover{box-shadow:1px 1px 0 #17143A}
+.editando .btn:active{box-shadow:0 0 0 #17143A}
+.card-ed{display:flex;flex-direction:column;gap:8px;text-align:left;font:inherit;color:var(--tinta);background:var(--papel);border:var(--borda);box-shadow:4px 4px 0 var(--tinta);padding:16px;cursor:pointer;transition:transform .1s,box-shadow .1s}
+.card-ed:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--tinta)}
+.card-ed .t{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.card-ed .v{font-size:.95rem;opacity:.8}
+.card-ed strong{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;font-size:1.35rem;line-height:1.1;letter-spacing:-.02em}
+.card-ed .d{flex:1}
+.card-ed.ativo{background:var(--manteiga);color:#17143A;box-shadow:6px 6px 0 var(--tinta);transform:translate(-2px,-2px)}
+.card-ed:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.editando .acoes{align-items:center}
+.vazio{margin:0;padding:18px;border:var(--borda);border-style:dashed;text-align:center}
+dialog{border:var(--borda);box-shadow:10px 10px 0 var(--tinta);background:var(--branco);color:var(--tinta);padding:0;max-width:min(440px,94vw);width:100%}
+dialog::backdrop{background:rgba(23,20,58,.6)}
+.conf-corpo{padding:24px 28px 28px}
+.conf-corpo h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:1.6rem;line-height:1.1;letter-spacing:-.02em;margin:0 0 10px}
+.conf-corpo p{margin:0 0 18px}
+@media (prefers-reduced-motion:reduce){.trilho,.trilho::after{transition:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div id="barra">
-    <button id="menu-abrir" class="menu-btn" type="button" aria-haspopup="dialog">
-      <svg width="20" height="14" viewBox="0 0 20 14" aria-hidden="true"><path d="M0 1.5h20M0 7h20M0 12.5h20" stroke="#17143A" stroke-width="3"/></svg>
-      Menu
-    </button>
-  </div>
-  <header>
-    <h1>Meus downloads<span class="sticker">grátis</span></h1>
-    <p id="intro">Arquivos que eu publico. Escolha um, toque em baixar e pegue o link.</p>
+  <header class="topo">
+    <h1>Painel<span class="sticker">dev</span></h1>
+    <p>Preencha os campos, veja o cartão ao vivo e copie o bloco pronto para colar no <code>index.html</code> do site.</p>
+    <a href="../">Ver o site</a>
   </header>
 
-  <h2 id="sec-titulo" class="sec-titulo"></h2>
+  <section class="painel" id="painel-lista" aria-labelledby="h-lista" style="margin-bottom:32px">
+    <h2 id="h-lista"><button class="toggle" id="lista-toggle" type="button" aria-expanded="true" aria-controls="lista-corpo"><span class="seta" aria-hidden="true"></span>Downloads publicados</button></h2>
+    <div class="painel-corpo" id="lista-corpo">
+      <p style="margin:0">Clique em um cartão para editar. Dá para mudar tudo, trocar a section, trocar o arquivo ou apagar o cartão e o arquivo. Depois toque em <strong>Salvar alterações</strong>.</p>
+      <div><button class="btn sec" id="carregar" type="button">Carregar lista</button></div>
+      <p class="status" id="status-lista" hidden></p>
+      <div id="lista"><p class="vazio">Cole o token do GitHub no painel "Enviar para o GitHub" e toque em Carregar lista.</p></div>
+    </div>
+  </section>
 
-  <main id="grade" class="grade" aria-live="polite"></main>
+  <div class="layout">
+    <section class="painel" aria-labelledby="h-form">
+      <h2 id="h-form">Dados do download</h2>
 
-  <section id="pagina" hidden></section>
+      <div class="editando" id="edit-aviso" hidden>
+        <span id="edit-txt"></span>
+        <span class="acoes">
+          <button class="btn perigo" id="edit-apagar" type="button">Apagar</button>
+          <button class="btn sec" id="edit-sair" type="button">Sair da edição</button>
+        </span>
+      </div>
 
-  <footer>Para adicionar um download, publique pelo painel <code>dev/</code>.</footer>
+      <label class="arquivo" for="arq">
+        <span id="arq-txt">Escolher arquivo (.zip, .rar ou .7z)</span>
+        <small id="arq-nome"></small>
+        <input id="arq" type="file" accept=".zip,.rar,.7z">
+      </label>
+      <p class="aviso" id="aviso" hidden></p>
+
+      <label class="campo">Título
+        <input id="nome" type="text" placeholder="Nome do arquivo">
+      </label>
+
+      <label class="campo">Descrição curta
+        <small>Aparece no cartão.</small>
+        <input id="descricao" type="text" placeholder="Uma frase explicando o que é">
+      </label>
+
+      <label class="campo">Detalhes
+        <small>Texto completo da janela ao abrir o cartão (opcional).</small>
+        <textarea id="detalhes" placeholder="O que tem dentro, como instalar, o que mudou..."></textarea>
+      </label>
+
+      <fieldset style="border:0;padding:0;margin:0">
+        <legend style="font-weight:600;margin-bottom:6px;padding:0">Tipo do arquivo</legend>
+        <div class="tipos" id="tipos">
+          <label><input type="radio" name="tipo" value="ZIP" checked><span>ZIP</span></label>
+          <label><input type="radio" name="tipo" value="RAR"><span>RAR</span></label>
+          <label><input type="radio" name="tipo" value="7Z"><span>7Z</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset style="border:0;padding:0;margin:0">
+        <legend style="font-weight:600;margin-bottom:6px;padding:0">Section</legend>
+        <div class="tipos" id="secoes"></div>
+        <label class="campo" id="secao-nova-box" style="margin-top:12px" hidden>Nome da nova section
+          <input id="secao-nova" type="text" placeholder="Ex.: Add-ons para Bedrock" autocomplete="off">
+        </label>
+        <small class="dica">Sem section escolhida, o download fica na principal.</small>
+      </fieldset>
+
+      <fieldset style="border:0;padding:0;margin:0">
+        <legend style="font-weight:600;margin-bottom:6px;padding:0">Subsection</legend>
+        <div class="tipos" id="subsecoes"></div>
+        <label class="campo" id="sub-nova-box" style="margin-top:12px" hidden>Nome da nova subsection
+          <input id="sub-nova" type="text" placeholder="Ex.: Java" autocomplete="off">
+        </label>
+        <small class="dica">Fica dentro da section escolhida. Sem subsection, o download fica direto na section.</small>
+      </fieldset>
+
+      <label class="alterna">
+        <span>Página própria<small>Mostra um ícone de abrir que leva a uma página com o link para copiar.</small></span>
+        <input id="pagina" type="checkbox" role="switch">
+        <span class="trilho" aria-hidden="true"></span>
+      </label>
+
+
+
+      <label class="alterna">
+        <span>Proteger com senha<small>Exige uma senha para abrir o download, baixar o arquivo e entrar na página própria.</small></span>
+        <input id="senha-ativa" type="checkbox" role="switch">
+        <span class="trilho" aria-hidden="true"></span>
+      </label>
+      <div class="senha-box" id="senha-opcoes" hidden>
+        <label class="campo">Senha
+          <input id="senha" type="password" autocomplete="new-password" placeholder="Digite a senha">
+          <small id="senha-dica">A senha nunca é salva em texto puro; o painel publica somente um hash.</small>
+        </label>
+      </div>
+
+      <div class="sub" id="pag-opcoes" hidden>
+        <label class="alterna">
+          <span>Mostrar botão de abrir<small>Mostra, no pop-up do site, um botão que abre a página própria em outra aba.</small></span>
+          <input id="abrir" type="checkbox" role="switch">
+          <span class="trilho" aria-hidden="true"></span>
+        </label>
+        <label class="alterna">
+          <span>Permitir voltar<small>Mostra, na página própria, o botão para voltar à lista de downloads.</small></span>
+          <input id="voltar" type="checkbox" role="switch" checked>
+          <span class="trilho" aria-hidden="true"></span>
+        </label>
+        <div>
+          <button class="btn sec" id="copiar-pag" type="button" disabled>Copiar link da página</button>
+          <small class="dica" id="dica-link"></small>
+        </div>
+      </div>
+
+      <div class="duas">
+        <label class="campo">Versão
+          <input id="versao" type="text" value="v1.0.0">
+        </label>
+        <label class="campo">Tamanho
+          <input id="tamanho" type="text" placeholder="2 MB">
+        </label>
+      </div>
+
+      <div class="duas">
+        <label class="campo">Data
+          <input id="data" type="text">
+        </label>
+        <label class="campo">Imagem de capa
+          <input id="imagem" type="text" placeholder="download/capa.png">
+        </label>
+      </div>
+    </section>
+
+    <div style="display:flex;flex-direction:column;gap:32px">
+      <section class="painel" aria-labelledby="h-prev">
+        <h2 id="h-prev">Prévia</h2>
+        <article class="cartao" id="previa"></article>
+      </section>
+
+      <section class="painel" aria-labelledby="h-gh">
+        <h2 id="h-gh">Enviar para o GitHub</h2>
+        <div class="duas">
+          <label class="campo">Usuário
+            <input id="gh-user" type="text" value="Arthulypa" autocomplete="off">
+          </label>
+          <label class="campo">Repositório
+            <input id="gh-repo" type="text" value="site-de-downloads" autocomplete="off">
+          </label>
+        </div>
+        <label class="campo">Branch dos arquivos
+          <input id="gh-branch" type="text" value="arquivos" autocomplete="off">
+        </label>
+        <label class="campo">Token do GitHub
+          <small>Token fine-grained só deste repositório, com permissão Contents: Read and write.</small>
+          <input id="gh-token" type="password" autocomplete="off" placeholder="github_pat_...">
+        </label>
+        <label class="lembrar"><input id="gh-lembrar" type="checkbox"> Lembrar o token neste aparelho</label>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button class="btn" id="publicar" type="button">Publicar no site</button>
+          <button class="btn" id="enviar" type="button" style="background:var(--branco);color:var(--tinta)">Só enviar o arquivo</button>
+        </div>
+        <p class="status" id="status" hidden></p>
+      </section>
+
+      <section class="painel" aria-labelledby="h-cod">
+        <h2 id="h-cod">Bloco para copiar (opção manual)</h2>
+        <pre id="codigo" tabindex="0"></pre>
+        <button class="btn" id="copiar" type="button">Copiar bloco</button>
+        <ol>
+          <li><strong>Automático:</strong> toque em <strong>Publicar no site</strong>. Ele envia o arquivo e atualiza a lista do site, sem copiar nada.</li>
+          <li><strong>Manual:</strong> toque em <strong>Só enviar o arquivo</strong>, copie o bloco e cole na lista <code>DOWNLOADS</code> do <code>index.html</code>.</li>
+        </ol>
+      </section>
+    </div>
+  </div>
+
 </div>
 
-<dialog id="modal" aria-labelledby="m-titulo">
-  <div class="m-previa" id="m-previa"></div>
-  <div class="m-corpo">
-    <h3 id="m-titulo"></h3>
-    <div class="meta" id="m-meta"></div>
-    <p id="m-desc" class="m-detalhes"></p>
+<dialog id="conf" aria-labelledby="conf-t">
+  <div class="conf-corpo">
+    <h3 id="conf-t">Apagar download?</h3>
+    <p id="conf-txt"></p>
     <div class="acoes">
-      <a id="m-link" class="btn" href="#" download>Baixar agora</a>
-      <button id="m-copiar" class="btn sec" type="button">Copiar link do arquivo</button>
-      <a id="m-abrir" class="btn sec" href="#" target="_blank" rel="noopener" hidden>Abrir página</a>
-      <button id="m-copiar-pag" class="btn sec" type="button" hidden>Copiar link da página</button>
-      <button id="m-fechar" class="btn sec" type="button">Fechar</button>
+      <button class="btn perigo" id="conf-ok" type="button">Apagar</button>
+      <button class="btn sec" id="conf-nao" type="button">Cancelar</button>
     </div>
-  </div>
-</dialog>
-
-
-
-<dialog id="senha-modal" aria-labelledby="senha-t">
-  <div class="auth-corpo">
-    <h3 id="senha-t">Conteúdo protegido</h3>
-    <p id="senha-msg">Digite a senha para continuar.</p>
-    <label class="campo" style="display:flex;flex-direction:column;gap:6px;font-weight:600">
-      Senha
-      <input id="senha-input" type="password" autocomplete="current-password">
-    </label>
-    <p id="senha-erro" class="auth-erro" hidden>Senha incorreta.</p>
-    <label class="lembrar">
-      <input id="senha-lembrar" type="checkbox">
-      Lembrar neste dispositivo por 10 dias
-    </label>
-    <div class="acoes">
-      <button id="senha-ok" class="btn" type="button">Continuar</button>
-      <button id="senha-cancelar" class="btn sec" type="button">Cancelar</button>
-    </div>
-  </div>
-</dialog>
-
-<dialog id="menu" aria-labelledby="menu-t">
-  <div class="menu-corpo">
-    <div class="menu-topo">
-      <h3 id="menu-t">Sections</h3>
-      <button id="menu-fechar" class="btn sec" type="button">Fechar</button>
-    </div>
-    <nav id="menu-lista" aria-label="Sections"></nav>
   </div>
 </dialog>
 
 <script>
-/* ============================================================
-   EDITE AQUI: cada item vira um cartão no site.
-   "url" é o caminho do arquivo dentro da pasta download/ (ou um link externo).
-   "detalhes" e "imagem" são opcionais.
-   ============================================================ */
-/* Link da lista que o painel dev atualiza sozinho (deixe "" para desligar). */
-const JSON_URL = "https://raw.githubusercontent.com/Arthulypa/site-de-downloads/arquivos/downloads.json";
-
-/* Downloads manuais (opcional): cole aqui os blocos copiados do painel dev. */
-const DOWNLOADS = [];
-
+const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const grade = document.getElementById("grade");
-const modal = document.getElementById("modal");
-const mLink = document.getElementById("m-link");
-const mDesc = document.getElementById("m-desc");
-const mCopiar = document.getElementById("m-copiar");
-
-let LISTA = [...DOWNLOADS];
-const normSecao = t => { t = String(t ?? "").trim().replace(/\s+/g, " "); return t.toLowerCase() === "principal" ? "" : t; };
-const menu = document.getElementById("menu");
-const menuLista = document.getElementById("menu-lista");
-const normSub = t => String(t ?? "").trim().replace(/\s+/g, " ");
-const doSec = d => normSecao(d.secao).toLowerCase();
-const doSub = d => normSub(d.subsecao).toLowerCase();
-let SEC = "";  /* "" = principal; senão o nome da section em minúsculas */
-let SUB = "";  /* "" = a section inteira; senão o nome da subsection em minúsculas */
-const ABERTAS = new Set(); /* sections com a lista de subsections aberta no menu */
-
-function estrutura(){
-  const m = new Map();
-  const get = (k, nome) => { if (!m.has(k)) m.set(k, { k, nome, n: 0, subs: new Map() }); return m.get(k); };
-  get("", "Principal");
-  LISTA.forEach(d => {
-    const nome = normSecao(d.secao);
-    const sec = get(nome.toLowerCase(), nome || "Principal");
-    sec.n++;
-    const sn = normSub(d.subsecao);
-    if (sn) {
-      const sk = sn.toLowerCase();
-      if (!sec.subs.has(sk)) sec.subs.set(sk, { k: sk, nome: sn, n: 0 });
-      sec.subs.get(sk).n++;
-    }
-  });
-  return m;
-}
-
-function montarMenu(est){
-  menuLista.innerHTML = [...est.values()].map(s => {
-    const subs = [...s.subs.values()];
-    const aberta = subs.length > 0 && ABERTAS.has(s.k);
-    return `<div class="sec-item">
-      <div class="sec-linha">
-        <button type="button" class="sec-btn" data-k="${esc(s.k)}" data-s="" aria-current="${s.k === SEC && !SUB}"><span>${esc(s.nome)}</span><span class="n">${s.n}</span></button>
-        ${subs.length ? `<button type="button" class="sec-seta" data-exp="${esc(s.k)}" aria-expanded="${aberta}" aria-label="Subsections de ${esc(s.nome)}"><span class="seta" aria-hidden="true"></span></button>` : ""}
-      </div>
-      ${aberta ? `<div class="sub-lista">${subs.map(x => `<button type="button" class="sub-btn" data-k="${esc(s.k)}" data-s="${esc(x.k)}" aria-current="${s.k === SEC && x.k === SUB}"><span>${esc(x.nome)}</span><span class="n">${x.n}</span></button>`).join("")}</div>` : ""}
-    </div>`;
-  }).join("");
-}
-
-function desenhar(){
-  const est = estrutura();
-  if (!est.has(SEC)) { SEC = ""; SUB = ""; }
-  const sec = est.get(SEC);
-  if (SUB && !sec.subs.has(SUB)) SUB = "";
-  const sub = SUB ? sec.subs.get(SUB) : null;
-  document.getElementById("sec-titulo").textContent = sec.nome + (sub ? " \u203A " + sub.nome : "");
-  montarMenu(est);
-
-  const itens = LISTA.map((d, i) => [d, i]).filter(([d]) => doSec(d) === SEC && (!SUB || doSub(d) === SUB));
-  if (!itens.length) {
-    const msg = !LISTA.length ? "Nenhum download publicado ainda." : (SEC ? "Nenhum download nesta section." : "Nenhum download na principal.");
-    grade.innerHTML = '<div class="vazio">' + msg + '</div>';
-    return;
-  }
-  const cartao = ([d, i]) => `
-    <article class="cartao" role="button" tabindex="0" data-i="${i}" aria-label="Ver detalhes de ${esc(d.nome)}">
-      <div class="topo">
-        <span class="tipo">${esc(d.tipo)}</span>
-        <span class="versao">${esc(d.versao)}</span>
-      </div>
-      <h2>${esc(d.nome)}</h2>
-      <p>${esc(d.descricao)}</p>
-      <div class="meta"><span>${esc(d.tamanho)}</span><span>${esc(d.data)}</span></div>
-      <button class="btn" type="button">Baixar</button>
-    </article>`;
-  if (SUB || !sec.subs.size) { grade.innerHTML = itens.map(cartao).join(""); return; }
-  /* section com subsections: primeiro os cards sem subsection, depois cada subsection com seu título */
-  let html = itens.filter(([d]) => !doSub(d)).map(cartao).join("");
-  sec.subs.forEach(x => {
-    html += `<h3 class="sub-cab">${esc(x.nome)}<span class="n">${x.n}</span></h3>` +
-      itens.filter(([d]) => doSub(d) === x.k).map(cartao).join("");
-  });
-  grade.innerHTML = html;
-}
-desenhar();
-
-document.getElementById("menu-abrir").addEventListener("click", () => menu.showModal());
-document.getElementById("menu-fechar").addEventListener("click", () => menu.close());
-menu.addEventListener("click", e => { if (e.target === menu) menu.close(); });
-menuLista.addEventListener("click", e => {
-  const seta = e.target.closest(".sec-seta");
-  if (seta) {
-    const k = seta.dataset.exp;
-    if (ABERTAS.has(k)) ABERTAS.delete(k); else ABERTAS.add(k);
-    desenhar();
-    [...menuLista.querySelectorAll(".sec-seta")].find(x => x.dataset.exp === k)?.focus();
-    return;
-  }
-  const b = e.target.closest(".sec-btn, .sub-btn");
-  if (!b) return;
-  SEC = b.dataset.k;
-  SUB = b.dataset.s || "";
-  ABERTAS.add(SEC);
-  desenhar();
-  menu.close();
-  window.scrollTo({ top: 0 });
-});
-
-const ID = new URLSearchParams(location.search).get("d");
-const secPagina = document.getElementById("pagina");
-
-const senhaModal = document.getElementById("senha-modal");
-const senhaInput = document.getElementById("senha-input");
-const senhaLembrar = document.getElementById("senha-lembrar");
-const senhaErro = document.getElementById("senha-erro");
-let senhaResolve = null;
-let senhaAtual = null;
-
+const EXT = { zip: "ZIP", rar: "RAR", "7z": "7Z" };
 async function sha256(texto){
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(texto));
   return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,"0")).join("");
 }
-function authKey(d){ return "download-auth:" + String(d.id || d.url); }
-function autorizado(d){
+let nomeArquivo = "";
+let arquivoSel = null;
+let editando = null;
+
+$("data").value = new Date().toLocaleDateString("pt-BR");
+
+function tamanhoLegivel(b){
+  if (b < 1024) return b + " B";
+  if (b < 1024*1024) return Math.round(b/1024) + " KB";
+  if (b < 1024*1024*1024) return (b/1024/1024).toFixed(b < 10*1024*1024 ? 1 : 0).replace(".0","") + " MB";
+  return (b/1024/1024/1024).toFixed(1) + " GB";
+}
+const tipoAtual = () => document.querySelector('input[name="tipo"]:checked').value;
+
+const slug = t => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "download";
+
+const normSecao = t => { t = String(t ?? "").trim().replace(/\s+/g, " "); return t.toLowerCase() === "principal" ? "" : t; };
+let secaoSel = "";
+let subSel = "";
+const normSub = t => String(t ?? "").trim().replace(/\s+/g, " ");
+function nomesSubsecoes(sec){
+  const vistos = [];
+  listaAtual.forEach(d => {
+    if (normSecao(d.secao).toLowerCase() !== String(sec).toLowerCase()) return;
+    const n = normSub(d.subsecao);
+    if (n && !vistos.some(x => x.toLowerCase() === n.toLowerCase())) vistos.push(n);
+  });
+  return vistos;
+}
+function subAtual(){
+  if (subSel !== "__nova__") return subSel;
+  const n = normSub($("sub-nova").value);
+  return nomesSubsecoes(secaoAtual()).find(x => x.toLowerCase() === n.toLowerCase()) || n;
+}
+function desenharSubsecoes(){
+  const semSec = secaoSel === "__nova__" && !normSecao($("secao-nova").value);
+  const nomes = semSec ? [] : nomesSubsecoes(secaoAtual());
+  if (subSel && subSel !== "__nova__" && !nomes.some(x => x.toLowerCase() === subSel.toLowerCase())) nomes.push(subSel);
+  const opcoes = [["", "Nenhuma"], ...nomes.map(n => [n, n]), ["__nova__", "+ Nova subsection"]];
+  $("subsecoes").innerHTML = opcoes.map(([val, rot]) =>
+    `<label><input type="radio" name="subsecao" value="${esc(val)}"${val === subSel ? " checked" : ""}><span>${esc(rot)}</span></label>`).join("");
+  $("sub-nova-box").hidden = subSel !== "__nova__";
+}
+function nomesSecoes(){
+  const vistos = [];
+  listaAtual.forEach(d => {
+    const n = normSecao(d.secao);
+    if (n && !vistos.some(x => x.toLowerCase() === n.toLowerCase())) vistos.push(n);
+  });
+  return vistos;
+}
+function secaoAtual(){
+  if (secaoSel !== "__nova__") return secaoSel;
+  const n = normSecao($("secao-nova").value);
+  return nomesSecoes().find(x => x.toLowerCase() === n.toLowerCase()) || n;
+}
+function desenharSecoes(){
+  const nomes = nomesSecoes();
+  if (secaoSel && secaoSel !== "__nova__" && !nomes.some(x => x.toLowerCase() === secaoSel.toLowerCase())) nomes.push(secaoSel);
+  const opcoes = [["", "Principal"], ...nomes.map(n => [n, n]), ["__nova__", "+ Nova section"]];
+  $("secoes").innerHTML = opcoes.map(([val, rot]) =>
+    `<label><input type="radio" name="secao" value="${esc(val)}"${val === secaoSel ? " checked" : ""}><span>${esc(rot)}</span></label>`).join("");
+  $("secao-nova-box").hidden = secaoSel !== "__nova__";
+  desenharSubsecoes();
+}
+$("secoes").addEventListener("change", e => {
+  secaoSel = e.target.value;
+  subSel = ""; $("sub-nova").value = ""; desenharSubsecoes();
+  $("secao-nova-box").hidden = secaoSel !== "__nova__";
+  if (secaoSel === "__nova__") $("secao-nova").focus();
+  atualizar();
+});
+
+$("subsecoes").addEventListener("change", e => {
+  subSel = e.target.value;
+  $("sub-nova-box").hidden = subSel !== "__nova__";
+  if (subSel === "__nova__") $("sub-nova").focus();
+  atualizar();
+});
+$("secao-nova").addEventListener("input", desenharSubsecoes);
+
+function dados(){
+  const tipo = tipoAtual();
+  const arq = nomeArquivo || ("arquivo." + tipo.toLowerCase());
+  return {
+    nome: $("nome").value.trim() || "Nome do arquivo",
+    id: editando ? editando.id : slug((nomeArquivo || $("nome").value.trim() || "download").replace(/\.[^.]+$/, "")),
+    descricao: $("descricao").value.trim() || "Uma frase explicando o que é.",
+    versao: $("versao").value.trim(),
+    tipo,
+    secao: secaoAtual(),
+    subsecao: subAtual(),
+    tamanho: $("tamanho").value.trim(),
+    data: $("data").value.trim(),
+    detalhes: $("detalhes").value.trim(),
+    imagem: $("imagem").value.trim(),
+    pagina: $("pagina").checked,
+    abrir: $("abrir").checked,
+    voltar: $("voltar").checked,
+    senhaAtiva: $("senha-ativa").checked,
+    senhaHash: editando?.senhaHash || "",
+    url: (editando && !nomeArquivo) ? editando.url : linkRaw(arq)
+  };
+}
+
+function atualizarSenha(){
+  const ativa = $("senha-ativa").checked;
+  $("senha-opcoes").hidden = !ativa;
+  $("senha").required = ativa && !editando?.senhaHash;
+  if (!ativa) $("senha").value = "";
+  $("senha-dica").textContent = editando?.senhaHash
+    ? "Já existe uma senha. Deixe em branco para manter ou digite outra para trocar."
+    : "A senha nunca é salva em texto puro; o painel publica somente um hash.";
+}
+$("senha-ativa").addEventListener("change", atualizarSenha);
+$("senha").addEventListener("input", atualizar);
+
+function atualizar(){
+  const d = dados();
+  $("previa").innerHTML = `
+    <div class="t"><span class="tipo">${esc(d.tipo)}</span><span style="opacity:.8">${esc(d.versao)}</span></div>
+    <h3>${esc(d.nome)}</h3>
+    <p>${esc(d.descricao)}</p>
+    <div class="meta"><span>${esc(d.tamanho)}</span><span>${esc(d.data)}</span></div>`;
+
+  const linhas = Object.entries(d).map(([k, v]) => `    ${k}: ${JSON.stringify(v)}`);
+  $("codigo").textContent = "  {\n" + linhas.join(",\n") + "\n  },";
+}
+
+$("arq").addEventListener("change", e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const ext = f.name.split(".").pop().toLowerCase();
+  const aviso = $("aviso");
+  nomeArquivo = f.name;
+  arquivoSel = f;
+  linkPronto = false; estadoLink();
+  $("arq-txt").textContent = "Trocar arquivo";
+  $("arq-nome").textContent = f.name;
+  $("tamanho").value = tamanhoLegivel(f.size);
+  if (EXT[ext]) {
+    document.querySelector(`input[name="tipo"][value="${EXT[ext]}"]`).checked = true;
+    aviso.hidden = true;
+  } else {
+    aviso.hidden = false;
+    aviso.textContent = "Esse arquivo não é .zip, .rar nem .7z. Compacte em um desses formatos antes de publicar.";
+  }
+  if (!$("nome").value.trim()) $("nome").value = f.name.replace(/\.[^.]+$/, "");
+  atualizar();
+});
+
+document.querySelectorAll("input[type=text], textarea, input[name=tipo]").forEach(el => el.addEventListener("input", atualizar));
+
+$("copiar").addEventListener("click", async () => {
   try {
-    const x = JSON.parse(localStorage.getItem(authKey(d)) || "null");
-    return !!x && x.expira > Date.now() && x.hash === d.senhaHash;
-  } catch { return false; }
+    await navigator.clipboard.writeText($("codigo").textContent);
+    $("copiar").textContent = "Bloco copiado";
+  } catch {
+    $("copiar").textContent = "Não foi possível copiar";
+  }
+  setTimeout(() => $("copiar").textContent = "Copiar bloco", 2000);
+});
+
+/* ---------- Envio para o GitHub ---------- */
+const gh = { user: $("gh-user"), repo: $("gh-repo"), branch: $("gh-branch"), token: $("gh-token"), lembrar: $("gh-lembrar") };
+const v = el => el.value.trim();
+function linkRaw(nome){
+  return `https://github.com/${v(gh.user)}/${v(gh.repo)}/raw/refs/heads/${v(gh.branch)}/${encodeURI(nome)}`;
 }
-function lembrarAuth(d, hash){
-  try { localStorage.setItem(authKey(d), JSON.stringify({hash, expira:Date.now()+10*24*60*60*1000})); } catch {}
+try {
+  const c = JSON.parse(localStorage.getItem("gh-cfg") || "{}");
+  if (c.user) gh.user.value = c.user;
+  if (c.repo) gh.repo.value = c.repo;
+  if (c.branch) gh.branch.value = c.branch;
+  if (c.token) { gh.token.value = c.token; gh.lembrar.checked = true; }
+} catch {}
+function salvarCfg(){
+  try {
+    localStorage.setItem("gh-cfg", JSON.stringify({
+      user: v(gh.user), repo: v(gh.repo), branch: v(gh.branch),
+      token: gh.lembrar.checked ? v(gh.token) : ""
+    }));
+  } catch {}
 }
-function esquecerAuth(d){
-  try { localStorage.removeItem(authKey(d)); } catch {}
+[gh.user, gh.repo, gh.branch, gh.token, gh.lembrar].forEach(el => el.addEventListener("change", salvarCfg));
+
+function status(msg, tipo){
+  const el = $("status");
+  el.hidden = !msg;
+  el.textContent = msg || "";
+  el.className = "status" + (tipo ? " " + tipo : "");
 }
-function pedirSenha(d){
-  return new Promise(resolve => {
-    senhaResolve = resolve; senhaAtual = d;
-    senhaInput.value = ""; senhaLembrar.checked = false; senhaErro.hidden = true;
-    senhaModal.showModal();
-    setTimeout(() => senhaInput.focus(), 50);
+function paraBase64(f){
+  return new Promise((ok, falha) => {
+    const r = new FileReader();
+    r.onload = () => ok(String(r.result).split(",")[1]);
+    r.onerror = () => falha(new Error("Não foi possível ler o arquivo."));
+    r.readAsDataURL(f);
   });
 }
-async function exigirAcesso(d){
-  if (!d.senhaHash) return true;
-  if (autorizado(d)) return true;
-  const ok = await pedirSenha(d);
-  return ok;
+async function erroGH(r){
+  let m = "";
+  try { m = (await r.json()).message || ""; } catch {}
+  if (r.status === 401) return new Error("Token inválido ou expirado. Gere um novo no GitHub.");
+  if (r.status === 403) return new Error("O token não tem permissão de escrita (Contents: Read and write) neste repositório.");
+  if (r.status === 404) return new Error("Repositório não encontrado, ou o token não tem acesso a ele. Confira usuário, repositório e token.");
+  if (r.status === 409) { const e = new Error("A lista foi alterada ao mesmo tempo. Tente de novo."); e.status = 409; return e; }
+  if (r.status === 422) return new Error("O GitHub recusou: " + (m || "confira se a branch existe."));
+  return new Error("Erro " + r.status + (m ? ": " + m : ""));
 }
-senhaModal.addEventListener("click", e => { if (e.target === senhaModal) { senhaModal.close(); if (senhaResolve) { senhaResolve(false); senhaResolve=null; } } });
-document.getElementById("senha-cancelar").addEventListener("click", () => {
-  senhaModal.close(); if (senhaResolve) { senhaResolve(false); senhaResolve=null; }
+
+const cfg = () => ({ user: v(gh.user), repo: v(gh.repo), branch: v(gh.branch), token: v(gh.token) });
+const hdrs = () => ({
+  Authorization: "Bearer " + v(gh.token),
+  Accept: "application/vnd.github+json",
+  "X-GitHub-Api-Version": "2022-11-28"
 });
-document.getElementById("senha-ok").addEventListener("click", async () => {
-  if (!senhaAtual) return;
-  const hash = await sha256(senhaInput.value);
-  if (hash !== senhaAtual.senhaHash) { senhaErro.hidden = false; senhaInput.select(); return; }
-  if (senhaLembrar.checked) lembrarAuth(senhaAtual, hash);
-  senhaModal.close();
-  if (senhaResolve) { senhaResolve(true); senhaResolve=null; }
-});
-senhaInput.addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("senha-ok").click(); });
+const textoParaB64 = t => { let s = ""; new TextEncoder().encode(t).forEach(x => s += String.fromCharCode(x)); return btoa(s); };
+const b64ParaTexto = b => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g, "")), c => c.charCodeAt(0)));
 
-
-
-function copiar(btn, texto){
-  const antes = btn.textContent;
-  (navigator.clipboard ? navigator.clipboard.writeText(texto) : Promise.reject())
-    .then(() => { btn.textContent = "Link copiado"; })
-    .catch(() => { btn.textContent = "Não foi possível copiar"; })
-    .finally(() => setTimeout(() => { btn.textContent = antes; }, 2000));
+const ghGet = (url, h) => fetch(url + (url.includes("?") ? "&" : "?") + "_=" + Date.now(), { headers: h, cache: "no-store" });
+async function comRetry(fn){
+  for (let t = 0; ; t++) {
+    try { return await fn(); }
+    catch (e) {
+      if (e.status === 409 && t < 2) { await new Promise(r => setTimeout(r, 900)); continue; }
+      throw e;
+    }
+  }
 }
 
-async function rotear(carregado){
-  if (!ID) return;
-  document.getElementById("barra").hidden = true;
-  document.getElementById("sec-titulo").hidden = true;
-  document.querySelector("header").hidden = true;
-  document.querySelector("footer").hidden = true;
-  grade.hidden = true;
-  secPagina.hidden = false;
-  const d = LISTA.find(x => x.id === ID && x.pagina);
-  if (!d) {
-    secPagina.innerHTML = carregado
-      ? '<div class="vazio">Download não encontrado.<br><br><a class="btn" href="./">Voltar aos downloads</a></div>'
-      : '<div class="vazio">Carregando...</div>';
-    return;
-  }
-  document.title = d.nome + " · Downloads";
-  if (!(await exigirAcesso(d))) {
-    secPagina.innerHTML = '<div class="vazio"><p>Este download está protegido por senha.</p><a class="btn" href="./">Voltar aos downloads</a></div>';
-    return;
-  }
-  secPagina.innerHTML = `
-    ${d.voltar !== false ? '<p><a class="voltar" href="./">Voltar aos downloads</a></p>' : ""}
-    <article class="pcard">
-      <div class="m-previa">${d.imagem ? `<img src="${esc(d.imagem)}" alt="Prévia de ${esc(d.nome)}">` : `<span>${esc(d.tipo)}</span>`}</div>
-      <div class="m-corpo">
-        <h2>${esc(d.nome)}</h2>
-        <div class="meta">${[d.tipo, d.versao, d.tamanho, d.data].filter(Boolean).map(x => `<span>${esc(x)}</span>`).join("")}</div>
-        <p class="m-detalhes">${esc(d.detalhes || d.descricao)}</p>
-        <div class="acoes">
-          <a class="btn" href="${esc(d.url)}" download>Baixar agora</a>
-          <button class="btn sec" id="p-copiar-pag" type="button">Copiar link da página</button>
-          <button class="btn sec" id="p-copiar-arq" type="button">Copiar link do arquivo</button>
-        </div>
-      </div>
-    </article>`;
-  document.getElementById("p-copiar-pag").onclick = e => copiar(e.target, location.href);
-  document.getElementById("p-copiar-arq").onclick = e => copiar(e.target, new URL(d.url, location.href).href);
+function validar(){
+  const f = arquivoSel;
+  if (!f && !editando) return "Escolha o arquivo primeiro.";
+  if (f && !EXT[f.name.split(".").pop().toLowerCase()]) return "Só são aceitos arquivos .zip, .rar ou .7z.";
+  if (!v(gh.token)) return "Cole o token do GitHub.";
+  if (f && f.size > 95 * 1024 * 1024) return "Arquivo acima de 95 MB. O GitHub recusa arquivos acima de 100 MB no repositório; use uma Release.";
+  return "";
 }
+const ocupado = b => { $("enviar").disabled = b; $("publicar").disabled = b; $("edit-apagar").disabled = b; document.querySelectorAll("#lista button").forEach(x => x.disabled = b); };
 
-rotear(!JSON_URL);
-
-if (JSON_URL) {
-  fetch(JSON_URL, { cache: "no-store" })
-    .then(r => r.ok ? r.json() : [])
-    .then(rem => {
-      if (!Array.isArray(rem)) return;
-      rem = rem.filter(d => d && typeof d.url === "string" && !/^\s*javascript:/i.test(d.url));
-      const urls = new Set(rem.map(d => d.url));
-      LISTA = [...rem, ...DOWNLOADS.filter(d => !urls.has(d.url))];
-      desenhar();
+async function subirArquivo(f){
+  const c = cfg(), h = hdrs();
+  const api = `https://api.github.com/repos/${c.user}/${c.repo}/contents/${encodeURI(f.name)}`;
+  let sha;
+  const ex = await ghGet(`${api}?ref=${encodeURIComponent(c.branch)}`, h);
+  if (ex.ok) sha = (await ex.json()).sha;
+  else if (ex.status !== 404) throw await erroGH(ex);
+  const content = await paraBase64(f);
+  const r = await fetch(api, {
+    method: "PUT",
+    headers: { ...h, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message: (sha ? "Atualiza " : "Adiciona ") + f.name,
+      content, branch: c.branch, ...(sha ? { sha } : {})
     })
-    .catch(() => {})
-    .finally(() => rotear(true));
+  });
+  if (!r.ok) throw await erroGH(r);
+  return !!sha;
 }
 
-async function abrir(i){
-  const d = LISTA[i];
-  if (!(await exigirAcesso(d))) return;
-  document.getElementById("m-titulo").textContent = d.nome;
-  document.getElementById("m-meta").innerHTML = [d.tipo, d.versao, d.tamanho, d.data].filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join("");
-  mDesc.textContent = d.detalhes || d.descricao;
-  const previa = document.getElementById("m-previa");
-  previa.innerHTML = d.imagem ? `<img src="${esc(d.imagem)}" alt="Prévia de ${esc(d.nome)}">` : `<span>${esc(d.tipo)}</span>`;
-  mLink.href = d.url;
-  const bp = document.getElementById("m-copiar-pag");
-  bp.hidden = !(d.pagina && d.id);
-  bp.textContent = "Copiar link da página";
-  const ba = document.getElementById("m-abrir");
-  ba.hidden = !(d.pagina && d.id && d.abrir);
-  ba.href = `${location.pathname}?d=${encodeURIComponent(d.id || "")}`;
-  bp.dataset.url = `${location.origin}${location.pathname}?d=${encodeURIComponent(d.id || "")}`;
-  mCopiar.textContent = "Copiar link do arquivo";
-  mCopiar.dataset.url = new URL(d.url, location.href).href;
-  modal.showModal();
+async function lerLista(){
+  const c = cfg(), h = hdrs();
+  const api = `https://api.github.com/repos/${c.user}/${c.repo}/contents/downloads.json`;
+  const ex = await ghGet(`${api}?ref=${encodeURIComponent(c.branch)}`, h);
+  if (ex.status === 404) return { api, lista: [], sha: undefined };
+  if (!ex.ok) throw await erroGH(ex);
+  const j = await ex.json();
+  let lista;
+  try { lista = JSON.parse(b64ParaTexto(j.content)); }
+  catch { throw new Error("O downloads.json no GitHub está com formato inválido. Corrija ou apague esse arquivo e tente de novo."); }
+  if (!Array.isArray(lista)) lista = [];
+  return { api, lista, sha: j.sha };
 }
-grade.addEventListener("click", e => {
-  const c = e.target.closest(".cartao");
-  if (c) abrir(c.dataset.i);
-});
-grade.addEventListener("keydown", e => {
-  if ((e.key === "Enter" || e.key === " ") && e.target.classList.contains("cartao")) {
-    e.preventDefault();
-    abrir(e.target.dataset.i);
-  }
-});
 
-mCopiar.addEventListener("click", async () => {
+async function gravarLista(api, lista, sha, mensagem){
+  const c = cfg();
+  const r = await fetch(api, {
+    method: "PUT",
+    headers: { ...hdrs(), "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message: mensagem,
+      content: textoParaB64(JSON.stringify(lista, null, 2) + "\n"),
+      branch: c.branch, ...(sha ? { sha } : {})
+    })
+  });
+  if (!r.ok) throw await erroGH(r);
+}
+
+function publicarLista(entrada, original){
+  return comRetry(async () => {
+    const r = await lerLista();
+    let lista = r.lista;
+    let pos = lista.findIndex(d => d.url === (original || entrada.url));
+    if (pos < 0) { lista.unshift(entrada); pos = 0; } else lista[pos] = entrada;
+    lista = lista.filter((d, k) => k === pos || d.url !== entrada.url);
+    await gravarLista(r.api, lista, r.sha, "Atualiza downloads.json");
+    return lista;
+  });
+}
+
+function nomeDoArquivo(url){
+  const c = cfg();
+  const base = `https://github.com/${c.user}/${c.repo}/raw/refs/heads/${c.branch}/`;
+  if (!String(url).startsWith(base)) return null;
+  let n;
+  try { n = decodeURIComponent(url.slice(base.length)); } catch { return null; }
+  return /^[^/]+\.(zip|rar|7z)$/i.test(n) ? n : null;
+}
+
+async function apagarArquivo(nome){
+  const c = cfg(), h = hdrs();
+  const api = `https://api.github.com/repos/${c.user}/${c.repo}/contents/${encodeURI(nome)}`;
+  const ex = await ghGet(`${api}?ref=${encodeURIComponent(c.branch)}`, h);
+  if (ex.status === 404) return false;
+  if (!ex.ok) throw await erroGH(ex);
+  const sha = (await ex.json()).sha;
+  const r = await fetch(api, {
+    method: "DELETE",
+    headers: { ...h, "Content-Type": "application/json" },
+    body: JSON.stringify({ message: "Remove " + nome, sha, branch: c.branch })
+  });
+  if (!r.ok) throw await erroGH(r);
+  return true;
+}
+
+$("enviar").addEventListener("click", async () => {
+  const erro = validar();
+  if (erro) return status(erro, "erro");
+  if (!arquivoSel) return status("Escolha o arquivo primeiro.", "erro");
+  salvarCfg(); ocupado(true);
+  status("Enviando... arquivos grandes podem demorar.");
   try {
-    await navigator.clipboard.writeText(mCopiar.dataset.url);
-    mCopiar.textContent = "Link copiado";
-  } catch {
-    mCopiar.textContent = "Não foi possível copiar";
-  }
+    const atualizou = await comRetry(() => subirArquivo(arquivoSel));
+    linkPronto = true; estadoLink();
+    status(atualizou ? "Arquivo atualizado no GitHub. O bloco já está com o link certo." : "Arquivo enviado. Agora copie o bloco e cole no index.html do site.", "ok");
+  } catch (e) { status(e.message || "Falha de conexão. Tente de novo.", "erro"); }
+  finally { ocupado(false); }
 });
-document.getElementById("m-copiar-pag").addEventListener("click", e => copiar(e.target, e.target.dataset.url));
-document.getElementById("m-fechar").addEventListener("click", () => modal.close());
-modal.addEventListener("click", e => { if (e.target === modal) modal.close(); });
+
+$("publicar").addEventListener("click", async () => {
+  const erro = validar();
+  if (erro) return status(erro, "erro");
+  if (secaoSel === "__nova__" && !normSecao($("secao-nova").value)) return status("Digite o nome da nova section ou escolha outra.", "erro");
+  if (subSel === "__nova__" && !normSub($("sub-nova").value)) return status("Digite o nome da nova subsection ou escolha outra.", "erro");
+  salvarCfg(); ocupado(true);
+  $("publicar").textContent = editando ? "Editando..." : "Publicando...";
+  try {
+    if (arquivoSel) { status("Enviando o arquivo..."); await comRetry(() => subirArquivo(arquivoSel)); }
+    status("Atualizando a lista do site...");
+    const entrada = dados();
+    if (entrada.senhaAtiva) {
+      if (v($("senha"))) entrada.senhaHash = await sha256($("senha").value);
+      else if (editando?.senhaHash) entrada.senhaHash = editando.senhaHash;
+      else throw new Error("Digite uma senha para proteger este download.");
+    } else {
+      entrada.senhaHash = "";
+    }
+    const original = editando ? editando.url : entrada.url;
+    const nova = await publicarLista(entrada, original);
+    let extra = "";
+    if (editando && original !== entrada.url && !nova.some(d => d.url === original)) {
+      const nome = nomeDoArquivo(original);
+      if (nome) { try { await comRetry(() => apagarArquivo(nome)); } catch { extra = " O arquivo antigo não pôde ser apagado."; } }
+    }
+    if (editando) {
+      editando.url = entrada.url;
+      let arq = String(entrada.url).split("/").pop();
+      try { arq = decodeURIComponent(arq); } catch {}
+      arquivoSel = null; nomeArquivo = ""; $("arq").value = "";
+      $("arq-txt").textContent = "Trocar arquivo (opcional)";
+      $("arq-nome").textContent = "Atual: " + arq;
+    }
+    linkPronto = true; estadoLink();
+    secaoSel = normSecao(entrada.secao); $("secao-nova").value = "";
+    subSel = normSub(entrada.subsecao); $("sub-nova").value = "";
+    listaAtual = nova; listaCarregada = true; desenharLista();
+    $("publicar").textContent = "Salvo!";
+    setTimeout(estadoEdicao, 2500);
+    status("Salvo! O cartão atualiza no site em até uns 5 minutos (o GitHub guarda a lista em cache)." + extra, "ok");
+  } catch (e) { estadoEdicao(); status(e.message || "Falha de conexão. Tente de novo.", "erro"); }
+  finally { ocupado(false); }
+});
+
+/* ---------- Editar e apagar ---------- */
+let listaAtual = [], listaCarregada = false;
+
+function statusLista(msg, tipo){
+  const el = $("status-lista");
+  el.hidden = !msg;
+  el.textContent = msg || "";
+  el.className = "status" + (tipo ? " " + tipo : "");
+}
+
+function cardEd([d, i]){
+  return `
+      <button type="button" class="card-ed${editando && editando.url === d.url ? " ativo" : ""}" data-ed="${i}" aria-label="Editar ${esc(d.nome)}">
+        <span class="t"><span class="tipo">${esc(d.tipo)}</span><span class="v">${esc(d.versao)}</span></span>
+        <strong>${esc(d.nome)}</strong>
+        <span class="d">${esc(d.descricao)}</span>
+        <span class="meta"><span>${esc(d.tamanho)}</span><span>${esc(d.data)}</span></span>
+      </button>`;
+}
+function desenharLista(){
+  desenharSecoes();
+  const el = $("lista");
+  if (!listaAtual.length) { el.innerHTML = '<p class="vazio">Nenhum download publicado ainda.</p>'; return; }
+  const grupos = [["", "Principal"], ...nomesSecoes().map(n => [n, n])];
+  el.innerHTML = grupos.map(([nome, rot]) => {
+    const itens = listaAtual.map((d, i) => [d, i]).filter(([d]) => normSecao(d.secao).toLowerCase() === nome.toLowerCase());
+    if (!itens.length) return "";
+    const semSub = itens.filter(([d]) => !normSub(d.subsecao));
+    let html = `<div class="grupo"><h3 class="grupo-t">${esc(rot)}<span class="n">${itens.length}</span></h3>`;
+    if (semSub.length) html += `<div class="grade-ed">${semSub.map(cardEd).join("")}</div>`;
+    nomesSubsecoes(nome).forEach(sn => {
+      const si = itens.filter(([d]) => normSub(d.subsecao).toLowerCase() === sn.toLowerCase());
+      html += `<h4 class="sub-t">${esc(sn)}<span class="n">${si.length}</span></h4><div class="grade-ed">${si.map(cardEd).join("")}</div>`;
+    });
+    return html + "</div>";
+  }).join("");
+}
+
+function abrirLista(){ $("lista-toggle").setAttribute("aria-expanded", "true"); $("lista-corpo").hidden = false; }
+$("lista-toggle").addEventListener("click", () => {
+  const aberto = $("lista-toggle").getAttribute("aria-expanded") === "true";
+  $("lista-toggle").setAttribute("aria-expanded", String(!aberto));
+  $("lista-corpo").hidden = aberto;
+});
+
+async function carregarLista(){
+  if (!v(gh.token)) return statusLista("Cole o token do GitHub (no painel Enviar para o GitHub) para carregar a lista.", "erro");
+  const btn = $("carregar");
+  btn.disabled = true; btn.textContent = "Carregando...";
+  statusLista("");
+  try {
+    const r = await lerLista();
+    listaAtual = r.lista; listaCarregada = true;
+    desenharLista();
+  } catch (e) { statusLista(e.message || "Falha de conexão. Tente de novo.", "erro"); }
+  finally { btn.disabled = false; btn.textContent = "Atualizar lista"; }
+}
+$("carregar").addEventListener("click", carregarLista);
+
+function limparForm(){
+  ["nome", "descricao", "detalhes", "tamanho", "imagem"].forEach(id => { $(id).value = ""; });
+  $("versao").value = "v1.0.0";
+  secaoSel = ""; subSel = ""; $("secao-nova").value = ""; $("sub-nova").value = ""; desenharSecoes();
+  $("data").value = new Date().toLocaleDateString("pt-BR");
+  document.querySelector('input[name="tipo"][value="ZIP"]').checked = true;
+  $("pagina").checked = false; $("abrir").checked = false; $("voltar").checked = true;
+  $("senha-ativa").checked = false; $("senha").value = ""; atualizarSenha();
+  nomeArquivo = ""; arquivoSel = null; $("arq").value = "";
+  $("arq-txt").textContent = "Escolher arquivo (.zip, .rar ou .7z)";
+  $("arq-nome").textContent = "";
+  $("aviso").hidden = true;
+  linkPronto = false;
+}
+
+function estadoEdicao(){
+  $("edit-aviso").hidden = !editando;
+  if (editando) $("edit-txt").textContent = "Editando: " + ($("nome").value.trim() || editando.id);
+  $("publicar").textContent = editando ? "Salvar alterações" : "Publicar no site";
+}
+
+function sairEdicao(){
+  editando = null;
+  limparForm(); estadoEdicao(); estadoLink(); atualizar();
+  if (listaCarregada) desenharLista();
+}
+$("edit-sair").addEventListener("click", sairEdicao);
+
+function editar(i){
+  const d = listaAtual[i];
+  limparForm();
+  $("nome").value = d.nome || ""; $("descricao").value = d.descricao || ""; $("detalhes").value = d.detalhes || "";
+  $("versao").value = d.versao || ""; $("tamanho").value = d.tamanho || ""; $("data").value = d.data || ""; $("imagem").value = d.imagem || "";
+  const r = document.querySelector(`input[name="tipo"][value="${d.tipo}"]`);
+  if (r) r.checked = true;
+  $("pagina").checked = !!d.pagina; $("abrir").checked = !!d.abrir; $("voltar").checked = d.voltar !== false;
+  $("senha-ativa").checked = !!d.senhaAtiva && !!d.senhaHash; $("senha").value = ""; atualizarSenha();
+  secaoSel = normSecao(d.secao); subSel = normSub(d.subsecao); $("secao-nova").value = ""; $("sub-nova").value = ""; desenharSecoes();
+  let arq = String(d.url || "").split("/").pop();
+  try { arq = decodeURIComponent(arq); } catch {}
+  $("arq-txt").textContent = "Trocar arquivo (opcional)";
+  $("arq-nome").textContent = "Atual: " + arq;
+  editando = { url: d.url, id: d.id || slug(arq.replace(/\.[^.]+$/, "")), senhaHash: d.senhaHash || "" };
+  linkPronto = !!d.pagina;
+  estadoEdicao(); estadoLink(); atualizar();
+  if (listaCarregada) desenharLista();
+  $("h-form").scrollIntoView({ behavior: "smooth" });
+}
+
+function confirmar(texto){
+  return new Promise(ok => {
+    const dlg = $("conf");
+    $("conf-txt").textContent = texto;
+    $("conf-ok").onclick = () => { dlg.close(); ok(true); };
+    $("conf-nao").onclick = () => { dlg.close(); ok(false); };
+    dlg.oncancel = () => ok(false);
+    dlg.showModal();
+  });
+}
+
+async function apagarDownload(d){
+  const nome = nomeDoArquivo(d.url);
+  const ok = await confirmar(
+    `Isso apaga o cartão "${d.nome}" do site` +
+    (nome ? ` e o arquivo ${nome} do GitHub.` : ". O arquivo está em outro lugar e não será apagado.") +
+    " Não dá para desfazer por aqui."
+  );
+  if (!ok) return;
+  if (!v(gh.token)) return statusLista("Cole o token do GitHub.", "erro");
+  ocupado(true); statusLista("Apagando...");
+  try {
+    const nova = await comRetry(async () => {
+      const r = await lerLista();
+      const n = r.lista.filter(x => x.url !== d.url);
+      await gravarLista(r.api, n, r.sha, "Remove " + d.nome + " de downloads.json");
+      return n;
+    });
+    let msg = "Cartão apagado.";
+    if (nome && !nova.some(x => x.url === d.url)) {
+      try { msg = (await comRetry(() => apagarArquivo(nome))) ? "Cartão e arquivo apagados." : "Cartão apagado. O arquivo já não estava no GitHub."; }
+      catch (err) { msg = "Cartão apagado, mas o arquivo não pôde ser apagado: " + err.message; }
+    }
+    if (editando && editando.url === d.url) sairEdicao();
+    listaAtual = nova; desenharLista(); abrirLista();
+    statusLista(msg + " O site atualiza em até uns 5 minutos.", "ok");
+    $("painel-lista").scrollIntoView({ behavior: "smooth" });
+  } catch (err) { statusLista(err.message || "Falha de conexão. Tente de novo.", "erro"); }
+  finally { ocupado(false); }
+}
+
+$("lista").addEventListener("click", e => {
+  const ed = e.target.closest("[data-ed]");
+  if (ed) editar(+ed.dataset.ed);
+});
+$("edit-apagar").addEventListener("click", () => {
+  const d = editando && listaAtual.find(x => x.url === editando.url);
+  if (d) apagarDownload(d);
+});
+
+let linkPronto = false;
+function estadoLink(){
+  $("pag-opcoes").hidden = !$("pagina").checked;
+  $("copiar-pag").disabled = !linkPronto;
+  $("dica-link").textContent = linkPronto
+    ? "Link pronto. Se você só enviou o arquivo, ele funciona depois de colar o bloco no site."
+    : "Libera depois de publicar ou enviar o arquivo.";
+}
+$("pagina").addEventListener("change", () => { linkPronto = false; estadoLink(); atualizar(); });
+$("voltar").addEventListener("change", atualizar);
+$("abrir").addEventListener("change", atualizar);
+$("copiar-pag").addEventListener("click", async () => {
+  const btn = $("copiar-pag");
+  const link = new URL("../?d=" + encodeURIComponent(dados().id), location.href).href;
+  try { await navigator.clipboard.writeText(link); btn.textContent = "Link copiado"; }
+  catch { btn.textContent = "Não foi possível copiar"; }
+  setTimeout(() => { btn.textContent = "Copiar link da página"; }, 2000);
+});
+estadoLink();
+
+desenharSecoes();
+atualizarSenha();
+atualizar();
+if (v(gh.token)) carregarLista();
+gh.token.addEventListener("change", () => { if (!listaCarregada && v(gh.token)) carregarLista(); });
 </script>
 </body>
 </html>
