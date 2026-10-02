@@ -115,8 +115,16 @@ ol li{margin-bottom:4px}
 .acoes{display:flex;gap:12px;flex-wrap:wrap}
 .editando{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:0;padding:10px 12px;background:var(--manteiga);color:#17143A;border:3px solid #17143A;font-weight:600}
 .editando .btn{padding:6px 12px;font-size:.95rem;box-shadow:3px 3px 0 #17143A}
-#lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:22px}
-#lista .vazio{grid-column:1/-1}
+#lista{display:flex;flex-direction:column;gap:28px}
+.grade-ed{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:22px}
+.grupo-t{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;font-size:1.3rem;letter-spacing:-.02em;margin:0 0 14px;display:flex;align-items:center;gap:10px}
+.grupo-t .n{font-family:"Familjen Grotesk",system-ui,sans-serif;font-size:.85rem;font-weight:600;border:2px solid var(--tinta);border-radius:99px;padding:0 9px}
+.toggle{font:inherit;letter-spacing:inherit;color:inherit;background:none;border:0;padding:0;margin:0;display:flex;align-items:center;gap:12px;width:100%;text-align:left;cursor:pointer}
+.seta{flex:none;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:11px solid var(--tinta);transition:transform .15s}
+.toggle[aria-expanded="false"] .seta{transform:rotate(-90deg)}
+.painel-corpo{display:flex;flex-direction:column;gap:16px}
+.editando .btn:hover{box-shadow:1px 1px 0 #17143A}
+.editando .btn:active{box-shadow:0 0 0 #17143A}
 .card-ed{display:flex;flex-direction:column;gap:8px;text-align:left;font:inherit;color:var(--tinta);background:var(--papel);border:var(--borda);box-shadow:4px 4px 0 var(--tinta);padding:16px;cursor:pointer;transition:transform .1s,box-shadow .1s}
 .card-ed:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--tinta)}
 .card-ed .t{display:flex;justify-content:space-between;align-items:center;gap:10px}
@@ -145,11 +153,13 @@ dialog::backdrop{background:rgba(23,20,58,.6)}
   </header>
 
   <section class="painel" id="painel-lista" aria-labelledby="h-lista" style="margin-bottom:32px">
-    <h2 id="h-lista">Downloads publicados</h2>
-    <p style="margin:0">Clique em um cartão para editar. Dá para mudar tudo, trocar o arquivo ou apagar o cartão e o arquivo. Depois toque em <strong>Salvar alterações</strong>.</p>
-    <div><button class="btn sec" id="carregar" type="button">Carregar lista</button></div>
-    <p class="status" id="status-lista" hidden></p>
-    <div id="lista"><p class="vazio">Cole o token do GitHub no painel "Enviar para o GitHub" e toque em Carregar lista.</p></div>
+    <h2 id="h-lista"><button class="toggle" id="lista-toggle" type="button" aria-expanded="true" aria-controls="lista-corpo"><span class="seta" aria-hidden="true"></span>Downloads publicados</button></h2>
+    <div class="painel-corpo" id="lista-corpo">
+      <p style="margin:0">Clique em um cartão para editar. Dá para mudar tudo, trocar a section, trocar o arquivo ou apagar o cartão e o arquivo. Depois toque em <strong>Salvar alterações</strong>.</p>
+      <div><button class="btn sec" id="carregar" type="button">Carregar lista</button></div>
+      <p class="status" id="status-lista" hidden></p>
+      <div id="lista"><p class="vazio">Cole o token do GitHub no painel "Enviar para o GitHub" e toque em Carregar lista.</p></div>
+    </div>
   </section>
 
   <div class="layout">
@@ -192,6 +202,15 @@ dialog::backdrop{background:rgba(23,20,58,.6)}
           <label><input type="radio" name="tipo" value="RAR"><span>RAR</span></label>
           <label><input type="radio" name="tipo" value="7Z"><span>7Z</span></label>
         </div>
+      </fieldset>
+
+      <fieldset style="border:0;padding:0;margin:0">
+        <legend style="font-weight:600;margin-bottom:6px;padding:0">Section</legend>
+        <div class="tipos" id="secoes"></div>
+        <label class="campo" id="secao-nova-box" style="margin-top:12px" hidden>Nome da nova section
+          <input id="secao-nova" type="text" placeholder="Ex.: Add-ons para Bedrock" autocomplete="off">
+        </label>
+        <small class="dica">Sem section escolhida, o download fica na principal.</small>
       </fieldset>
 
       <label class="alterna">
@@ -312,6 +331,36 @@ const tipoAtual = () => document.querySelector('input[name="tipo"]:checked').val
 
 const slug = t => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "download";
 
+const normSecao = t => { t = String(t ?? "").trim().replace(/\s+/g, " "); return t.toLowerCase() === "principal" ? "" : t; };
+let secaoSel = "";
+function nomesSecoes(){
+  const vistos = [];
+  listaAtual.forEach(d => {
+    const n = normSecao(d.secao);
+    if (n && !vistos.some(x => x.toLowerCase() === n.toLowerCase())) vistos.push(n);
+  });
+  return vistos;
+}
+function secaoAtual(){
+  if (secaoSel !== "__nova__") return secaoSel;
+  const n = normSecao($("secao-nova").value);
+  return nomesSecoes().find(x => x.toLowerCase() === n.toLowerCase()) || n;
+}
+function desenharSecoes(){
+  const nomes = nomesSecoes();
+  if (secaoSel && secaoSel !== "__nova__" && !nomes.some(x => x.toLowerCase() === secaoSel.toLowerCase())) nomes.push(secaoSel);
+  const opcoes = [["", "Principal"], ...nomes.map(n => [n, n]), ["__nova__", "+ Nova section"]];
+  $("secoes").innerHTML = opcoes.map(([val, rot]) =>
+    `<label><input type="radio" name="secao" value="${esc(val)}"${val === secaoSel ? " checked" : ""}><span>${esc(rot)}</span></label>`).join("");
+  $("secao-nova-box").hidden = secaoSel !== "__nova__";
+}
+$("secoes").addEventListener("change", e => {
+  secaoSel = e.target.value;
+  $("secao-nova-box").hidden = secaoSel !== "__nova__";
+  if (secaoSel === "__nova__") $("secao-nova").focus();
+  atualizar();
+});
+
 function dados(){
   const tipo = tipoAtual();
   const arq = nomeArquivo || ("arquivo." + tipo.toLowerCase());
@@ -321,6 +370,7 @@ function dados(){
     descricao: $("descricao").value.trim() || "Uma frase explicando o que é.",
     versao: $("versao").value.trim(),
     tipo,
+    secao: secaoAtual(),
     tamanho: $("tamanho").value.trim(),
     data: $("data").value.trim(),
     detalhes: $("detalhes").value.trim(),
@@ -545,6 +595,7 @@ $("enviar").addEventListener("click", async () => {
 $("publicar").addEventListener("click", async () => {
   const erro = validar();
   if (erro) return status(erro, "erro");
+  if (secaoSel === "__nova__" && !normSecao($("secao-nova").value)) return status("Digite o nome da nova section ou escolha outra.", "erro");
   salvarCfg(); ocupado(true);
   $("publicar").textContent = editando ? "Editando..." : "Publicando...";
   try {
@@ -567,6 +618,7 @@ $("publicar").addEventListener("click", async () => {
       $("arq-nome").textContent = "Atual: " + arq;
     }
     linkPronto = true; estadoLink();
+    secaoSel = normSecao(entrada.secao); $("secao-nova").value = "";
     listaAtual = nova; listaCarregada = true; desenharLista();
     $("publicar").textContent = "Salvo!";
     setTimeout(estadoEdicao, 2500);
@@ -586,16 +638,30 @@ function statusLista(msg, tipo){
 }
 
 function desenharLista(){
+  desenharSecoes();
   const el = $("lista");
   if (!listaAtual.length) { el.innerHTML = '<p class="vazio">Nenhum download publicado ainda.</p>'; return; }
-  el.innerHTML = listaAtual.map((d, i) => `
-    <button type="button" class="card-ed${editando && editando.url === d.url ? " ativo" : ""}" data-ed="${i}" aria-label="Editar ${esc(d.nome)}">
-      <span class="t"><span class="tipo">${esc(d.tipo)}</span><span class="v">${esc(d.versao)}</span></span>
-      <strong>${esc(d.nome)}</strong>
-      <span class="d">${esc(d.descricao)}</span>
-      <span class="meta"><span>${esc(d.tamanho)}</span><span>${esc(d.data)}</span></span>
-    </button>`).join("");
+  const grupos = [["", "Principal"], ...nomesSecoes().map(n => [n, n])];
+  el.innerHTML = grupos.map(([nome, rot]) => {
+    const itens = listaAtual.map((d, i) => [d, i]).filter(([d]) => normSecao(d.secao).toLowerCase() === nome.toLowerCase());
+    if (!itens.length) return "";
+    return `<div class="grupo"><h3 class="grupo-t">${esc(rot)}<span class="n">${itens.length}</span></h3><div class="grade-ed">` +
+      itens.map(([d, i]) => `
+      <button type="button" class="card-ed${editando && editando.url === d.url ? " ativo" : ""}" data-ed="${i}" aria-label="Editar ${esc(d.nome)}">
+        <span class="t"><span class="tipo">${esc(d.tipo)}</span><span class="v">${esc(d.versao)}</span></span>
+        <strong>${esc(d.nome)}</strong>
+        <span class="d">${esc(d.descricao)}</span>
+        <span class="meta"><span>${esc(d.tamanho)}</span><span>${esc(d.data)}</span></span>
+      </button>`).join("") + `</div></div>`;
+  }).join("");
 }
+
+function abrirLista(){ $("lista-toggle").setAttribute("aria-expanded", "true"); $("lista-corpo").hidden = false; }
+$("lista-toggle").addEventListener("click", () => {
+  const aberto = $("lista-toggle").getAttribute("aria-expanded") === "true";
+  $("lista-toggle").setAttribute("aria-expanded", String(!aberto));
+  $("lista-corpo").hidden = aberto;
+});
 
 async function carregarLista(){
   if (!v(gh.token)) return statusLista("Cole o token do GitHub (no painel Enviar para o GitHub) para carregar a lista.", "erro");
@@ -614,6 +680,7 @@ $("carregar").addEventListener("click", carregarLista);
 function limparForm(){
   ["nome", "descricao", "detalhes", "tamanho", "imagem"].forEach(id => { $(id).value = ""; });
   $("versao").value = "v1.0.0";
+  secaoSel = ""; $("secao-nova").value = ""; desenharSecoes();
   $("data").value = new Date().toLocaleDateString("pt-BR");
   document.querySelector('input[name="tipo"][value="ZIP"]').checked = true;
   $("pagina").checked = false; $("abrir").checked = false; $("voltar").checked = true;
@@ -645,6 +712,7 @@ function editar(i){
   const r = document.querySelector(`input[name="tipo"][value="${d.tipo}"]`);
   if (r) r.checked = true;
   $("pagina").checked = !!d.pagina; $("abrir").checked = !!d.abrir; $("voltar").checked = d.voltar !== false;
+  secaoSel = normSecao(d.secao); $("secao-nova").value = ""; desenharSecoes();
   let arq = String(d.url || "").split("/").pop();
   try { arq = decodeURIComponent(arq); } catch {}
   $("arq-txt").textContent = "Trocar arquivo (opcional)";
@@ -687,7 +755,7 @@ async function apagarDownload(d){
       catch (err) { msg = "Cartão apagado, mas o arquivo não pôde ser apagado: " + err.message; }
     }
     if (editando && editando.url === d.url) sairEdicao();
-    listaAtual = nova; desenharLista();
+    listaAtual = nova; desenharLista(); abrirLista();
     statusLista(msg + " O site atualiza em até uns 5 minutos.", "ok");
     $("painel-lista").scrollIntoView({ behavior: "smooth" });
   } catch (err) { statusLista(err.message || "Falha de conexão. Tente de novo.", "erro"); }
@@ -723,6 +791,7 @@ $("copiar-pag").addEventListener("click", async () => {
 });
 estadoLink();
 
+desenharSecoes();
 atualizar();
 if (v(gh.token)) carregarLista();
 gh.token.addEventListener("change", () => { if (!listaCarregada && v(gh.token)) carregarLista(); });
