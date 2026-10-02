@@ -185,17 +185,20 @@ ol li{margin-bottom:4px}
           <input id="gh-token" type="password" autocomplete="off" placeholder="github_pat_...">
         </label>
         <label class="lembrar"><input id="gh-lembrar" type="checkbox"> Lembrar o token neste aparelho</label>
-        <button class="btn" id="enviar" type="button">Enviar arquivo</button>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button class="btn" id="publicar" type="button">Publicar no site</button>
+          <button class="btn" id="enviar" type="button" style="background:var(--branco);color:var(--tinta)">Só enviar o arquivo</button>
+        </div>
         <p class="status" id="status" hidden></p>
       </section>
 
       <section class="painel" aria-labelledby="h-cod">
-        <h2 id="h-cod">Bloco para colar</h2>
+        <h2 id="h-cod">Bloco para copiar (opção manual)</h2>
         <pre id="codigo" tabindex="0"></pre>
         <button class="btn" id="copiar" type="button">Copiar bloco</button>
         <ol>
-          <li>Envie o arquivo pelo botão <strong>Enviar arquivo</strong>.</li>
-          <li>No <code>index.html</code> do site, cole o bloco dentro da lista <code>DOWNLOADS</code>.</li>
+          <li><strong>Automático:</strong> toque em <strong>Publicar no site</strong>. Ele envia o arquivo e atualiza a lista do site, sem copiar nada.</li>
+          <li><strong>Manual:</strong> toque em <strong>Só enviar o arquivo</strong>, copie o bloco e cole na lista <code>DOWNLOADS</code> do <code>index.html</code>.</li>
         </ol>
       </section>
     </div>
@@ -323,48 +326,102 @@ async function erroGH(r){
   if (r.status === 401) return new Error("Token inválido ou expirado. Gere um novo no GitHub.");
   if (r.status === 403) return new Error("O token não tem permissão de escrita (Contents: Read and write) neste repositório.");
   if (r.status === 404) return new Error("Repositório não encontrado, ou o token não tem acesso a ele. Confira usuário, repositório e token.");
+  if (r.status === 409) return new Error("A lista foi alterada ao mesmo tempo. Tente de novo.");
   if (r.status === 422) return new Error("O GitHub recusou: " + (m || "confira se a branch existe."));
   return new Error("Erro " + r.status + (m ? ": " + m : ""));
 }
 
-$("enviar").addEventListener("click", async () => {
-  const f = arquivoSel, btn = $("enviar");
-  if (!f) return status("Escolha o arquivo primeiro.", "erro");
-  if (!EXT[f.name.split(".").pop().toLowerCase()]) return status("Só são aceitos arquivos .zip, .rar ou .7z.", "erro");
-  if (!v(gh.token)) return status("Cole o token do GitHub.", "erro");
-  if (f.size > 95 * 1024 * 1024) return status("Arquivo acima de 95 MB. O GitHub recusa arquivos acima de 100 MB no repositório; use uma Release.", "erro");
+const cfg = () => ({ user: v(gh.user), repo: v(gh.repo), branch: v(gh.branch), token: v(gh.token) });
+const hdrs = () => ({
+  Authorization: "Bearer " + v(gh.token),
+  Accept: "application/vnd.github+json",
+  "X-GitHub-Api-Version": "2022-11-28"
+});
+const textoParaB64 = t => { let s = ""; new TextEncoder().encode(t).forEach(x => s += String.fromCharCode(x)); return btoa(s); };
+const b64ParaTexto = b => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g, "")), c => c.charCodeAt(0)));
 
-  salvarCfg();
-  btn.disabled = true;
+function validar(){
+  const f = arquivoSel;
+  if (!f) return "Escolha o arquivo primeiro.";
+  if (!EXT[f.name.split(".").pop().toLowerCase()]) return "Só são aceitos arquivos .zip, .rar ou .7z.";
+  if (!v(gh.token)) return "Cole o token do GitHub.";
+  if (f.size > 95 * 1024 * 1024) return "Arquivo acima de 95 MB. O GitHub recusa arquivos acima de 100 MB no repositório; use uma Release.";
+  return "";
+}
+const ocupado = b => { $("enviar").disabled = b; $("publicar").disabled = b; };
+
+async function subirArquivo(f){
+  const c = cfg(), h = hdrs();
+  const api = `https://api.github.com/repos/${c.user}/${c.repo}/contents/${encodeURI(f.name)}`;
+  let sha;
+  const ex = await fetch(`${api}?ref=${encodeURIComponent(c.branch)}`, { headers: h });
+  if (ex.ok) sha = (await ex.json()).sha;
+  else if (ex.status !== 404) throw await erroGH(ex);
+  const content = await paraBase64(f);
+  const r = await fetch(api, {
+    method: "PUT",
+    headers: { ...h, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message: (sha ? "Atualiza " : "Adiciona ") + f.name,
+      content, branch: c.branch, ...(sha ? { sha } : {})
+    })
+  });
+  if (!r.ok) throw await erroGH(r);
+  return !!sha;
+}
+
+async function publicarLista(entrada){
+  const c = cfg(), h = hdrs();
+  const api = `https://api.github.com/repos/${c.user}/${c.repo}/contents/downloads.json`;
+  let lista = [], sha;
+  const ex = await fetch(`${api}?ref=${encodeURIComponent(c.branch)}`, { headers: h });
+  if (ex.ok) {
+    const j = await ex.json();
+    sha = j.sha;
+    try { lista = JSON.parse(b64ParaTexto(j.content)); }
+    catch { throw new Error("O downloads.json no GitHub está com formato inválido. Corrija ou apague esse arquivo e tente de novo."); }
+    if (!Array.isArray(lista)) lista = [];
+  } else if (ex.status !== 404) throw await erroGH(ex);
+
+  const pos = lista.findIndex(d => d.url === entrada.url);
+  if (pos >= 0) lista[pos] = entrada; else lista.unshift(entrada);
+
+  const r = await fetch(api, {
+    method: "PUT",
+    headers: { ...h, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message: "Atualiza downloads.json",
+      content: textoParaB64(JSON.stringify(lista, null, 2) + "\n"),
+      branch: c.branch, ...(sha ? { sha } : {})
+    })
+  });
+  if (!r.ok) throw await erroGH(r);
+}
+
+$("enviar").addEventListener("click", async () => {
+  const erro = validar();
+  if (erro) return status(erro, "erro");
+  salvarCfg(); ocupado(true);
   status("Enviando... arquivos grandes podem demorar.");
   try {
-    const api = `https://api.github.com/repos/${v(gh.user)}/${v(gh.repo)}/contents/${encodeURI(f.name)}`;
-    const headers = {
-      Authorization: "Bearer " + v(gh.token),
-      Accept: "application/vnd.github+json",
-      "X-GitHub-Api-Version": "2022-11-28"
-    };
-    let sha;
-    const ex = await fetch(`${api}?ref=${encodeURIComponent(v(gh.branch))}`, { headers });
-    if (ex.ok) sha = (await ex.json()).sha;
-    else if (ex.status !== 404) throw await erroGH(ex);
+    const atualizou = await subirArquivo(arquivoSel);
+    status(atualizou ? "Arquivo atualizado no GitHub. O bloco já está com o link certo." : "Arquivo enviado. Agora copie o bloco e cole no index.html do site.", "ok");
+  } catch (e) { status(e.message || "Falha de conexão. Tente de novo.", "erro"); }
+  finally { ocupado(false); }
+});
 
-    const content = await paraBase64(f);
-    const r = await fetch(api, {
-      method: "PUT",
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: (sha ? "Atualiza " : "Adiciona ") + f.name,
-        content, branch: v(gh.branch), ...(sha ? { sha } : {})
-      })
-    });
-    if (!r.ok) throw await erroGH(r);
-    status(sha ? "Arquivo atualizado no GitHub. O bloco abaixo já está com o link certo." : "Arquivo enviado para o GitHub. Agora copie o bloco e cole no index.html do site.", "ok");
-  } catch (e) {
-    status(e.message || "Falha de conexão. Tente de novo.", "erro");
-  } finally {
-    btn.disabled = false;
-  }
+$("publicar").addEventListener("click", async () => {
+  const erro = validar();
+  if (erro) return status(erro, "erro");
+  salvarCfg(); ocupado(true);
+  try {
+    status("Enviando o arquivo...");
+    await subirArquivo(arquivoSel);
+    status("Atualizando a lista do site...");
+    await publicarLista(dados());
+    status("Publicado. O cartão aparece no site em até uns 5 minutos (o GitHub guarda a lista em cache por um tempo).", "ok");
+  } catch (e) { status(e.message || "Falha de conexão. Tente de novo.", "erro"); }
+  finally { ocupado(false); }
 });
 
 atualizar();
