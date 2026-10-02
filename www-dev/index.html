@@ -142,6 +142,8 @@ ol li{margin-bottom:4px}
         </div>
       </fieldset>
 
+      <label class="lembrar"><input id="pagina" type="checkbox"> Ter página própria: mostra um ícone de abrir, que leva a uma página com o link para copiar</label>
+
       <div class="duas">
         <label class="campo">Versão
           <input id="versao" type="text" value="v1.0.0">
@@ -222,11 +224,14 @@ function tamanhoLegivel(b){
 }
 const tipoAtual = () => document.querySelector('input[name="tipo"]:checked').value;
 
+const slug = t => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "download";
+
 function dados(){
   const tipo = tipoAtual();
   const arq = nomeArquivo || ("arquivo." + tipo.toLowerCase());
   return {
     nome: $("nome").value.trim() || "Nome do arquivo",
+    id: slug((nomeArquivo || $("nome").value.trim() || "download").replace(/\.[^.]+$/, "")),
     descricao: $("descricao").value.trim() || "Uma frase explicando o que é.",
     versao: $("versao").value.trim(),
     tipo,
@@ -234,6 +239,7 @@ function dados(){
     data: $("data").value.trim(),
     detalhes: $("detalhes").value.trim(),
     imagem: $("imagem").value.trim(),
+    pagina: $("pagina").checked,
     url: linkRaw(arq)
   };
 }
@@ -423,6 +429,8 @@ $("publicar").addEventListener("click", async () => {
   } catch (e) { status(e.message || "Falha de conexão. Tente de novo.", "erro"); }
   finally { ocupado(false); }
 });
+
+$("pagina").addEventListener("change", atualizar);
 
 atualizar();
 </script>
