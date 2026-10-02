@@ -165,6 +165,11 @@ ol li{margin-bottom:4px}
 
       <div class="sub" id="pag-opcoes" hidden>
         <label class="alterna">
+          <span>Mostrar botão de abrir<small>Mostra, no pop-up do site, um botão que abre a página própria em outra aba.</small></span>
+          <input id="abrir" type="checkbox" role="switch">
+          <span class="trilho" aria-hidden="true"></span>
+        </label>
+        <label class="alterna">
           <span>Permitir voltar<small>Mostra, na página própria, o botão para voltar à lista de downloads.</small></span>
           <input id="voltar" type="checkbox" role="switch" checked>
           <span class="trilho" aria-hidden="true"></span>
@@ -271,6 +276,7 @@ function dados(){
     detalhes: $("detalhes").value.trim(),
     imagem: $("imagem").value.trim(),
     pagina: $("pagina").checked,
+    abrir: $("abrir").checked,
     voltar: $("voltar").checked,
     url: linkRaw(arq)
   };
@@ -475,6 +481,7 @@ function estadoLink(){
 }
 $("pagina").addEventListener("change", () => { linkPronto = false; estadoLink(); atualizar(); });
 $("voltar").addEventListener("change", atualizar);
+$("abrir").addEventListener("change", atualizar);
 $("copiar-pag").addEventListener("click", async () => {
   const btn = $("copiar-pag");
   const link = new URL("../?d=" + encodeURIComponent(dados().id), location.href).href;
