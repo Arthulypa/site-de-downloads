@@ -90,6 +90,13 @@ pre{
 }
 ol{margin:0;padding-left:1.2em}
 ol li{margin-bottom:4px}
+.btn[disabled]{opacity:.55;cursor:not-allowed;box-shadow:none;transform:none}
+.status{margin:0;padding:10px 12px;border:var(--borda);background:var(--papel);font-size:.95rem}
+.status.ok{background:var(--manteiga);color:#17143A;border-color:#17143A}
+.status.erro{background:#FF5C5C;color:#17143A;border-color:#17143A}
+.status[hidden]{display:none}
+.lembrar{display:flex;gap:8px;align-items:center;font-size:.95rem}
+.lembrar input{width:20px;height:20px;accent-color:var(--cobalto)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -160,12 +167,34 @@ ol li{margin-bottom:4px}
         <article class="cartao" id="previa"></article>
       </section>
 
+      <section class="painel" aria-labelledby="h-gh">
+        <h2 id="h-gh">Enviar para o GitHub</h2>
+        <div class="duas">
+          <label class="campo">Usuário
+            <input id="gh-user" type="text" value="Arthulypa" autocomplete="off">
+          </label>
+          <label class="campo">Repositório
+            <input id="gh-repo" type="text" value="site-de-downloads" autocomplete="off">
+          </label>
+        </div>
+        <label class="campo">Branch dos arquivos
+          <input id="gh-branch" type="text" value="arquivos" autocomplete="off">
+        </label>
+        <label class="campo">Token do GitHub
+          <small>Token fine-grained só deste repositório, com permissão Contents: Read and write.</small>
+          <input id="gh-token" type="password" autocomplete="off" placeholder="github_pat_...">
+        </label>
+        <label class="lembrar"><input id="gh-lembrar" type="checkbox"> Lembrar o token neste aparelho</label>
+        <button class="btn" id="enviar" type="button">Enviar arquivo</button>
+        <p class="status" id="status" hidden></p>
+      </section>
+
       <section class="painel" aria-labelledby="h-cod">
         <h2 id="h-cod">Bloco para colar</h2>
         <pre id="codigo" tabindex="0"></pre>
         <button class="btn" id="copiar" type="button">Copiar bloco</button>
         <ol>
-          <li>Coloque o arquivo na pasta <code>download/</code> com o nome <strong id="nome-arq">arquivo.zip</strong>.</li>
+          <li>Envie o arquivo pelo botão <strong>Enviar arquivo</strong>.</li>
           <li>No <code>index.html</code> do site, cole o bloco dentro da lista <code>DOWNLOADS</code>.</li>
         </ol>
       </section>
@@ -178,6 +207,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const EXT = { zip: "ZIP", rar: "RAR", "7z": "7Z" };
 let nomeArquivo = "";
+let arquivoSel = null;
 
 $("data").value = new Date().toLocaleDateString("pt-BR");
 
@@ -201,7 +231,7 @@ function dados(){
     data: $("data").value.trim(),
     detalhes: $("detalhes").value.trim(),
     imagem: $("imagem").value.trim(),
-    url: "download/" + encodeURI(arq)
+    url: linkRaw(arq)
   };
 }
 
@@ -215,7 +245,6 @@ function atualizar(){
 
   const linhas = Object.entries(d).map(([k, v]) => `    ${k}: ${JSON.stringify(v)}`);
   $("codigo").textContent = "  {\n" + linhas.join(",\n") + "\n  },";
-  $("nome-arq").textContent = decodeURI(d.url.replace(/^download\//, ""));
 }
 
 $("arq").addEventListener("change", e => {
@@ -224,6 +253,7 @@ $("arq").addEventListener("change", e => {
   const ext = f.name.split(".").pop().toLowerCase();
   const aviso = $("aviso");
   nomeArquivo = f.name;
+  arquivoSel = f;
   $("arq-txt").textContent = "Trocar arquivo";
   $("arq-nome").textContent = f.name;
   $("tamanho").value = tamanhoLegivel(f.size);
@@ -248,6 +278,93 @@ $("copiar").addEventListener("click", async () => {
     $("copiar").textContent = "Não foi possível copiar";
   }
   setTimeout(() => $("copiar").textContent = "Copiar bloco", 2000);
+});
+
+/* ---------- Envio para o GitHub ---------- */
+const gh = { user: $("gh-user"), repo: $("gh-repo"), branch: $("gh-branch"), token: $("gh-token"), lembrar: $("gh-lembrar") };
+const v = el => el.value.trim();
+function linkRaw(nome){
+  return `https://github.com/${v(gh.user)}/${v(gh.repo)}/raw/refs/heads/${v(gh.branch)}/${encodeURI(nome)}`;
+}
+try {
+  const c = JSON.parse(localStorage.getItem("gh-cfg") || "{}");
+  if (c.user) gh.user.value = c.user;
+  if (c.repo) gh.repo.value = c.repo;
+  if (c.branch) gh.branch.value = c.branch;
+  if (c.token) { gh.token.value = c.token; gh.lembrar.checked = true; }
+} catch {}
+function salvarCfg(){
+  try {
+    localStorage.setItem("gh-cfg", JSON.stringify({
+      user: v(gh.user), repo: v(gh.repo), branch: v(gh.branch),
+      token: gh.lembrar.checked ? v(gh.token) : ""
+    }));
+  } catch {}
+}
+[gh.user, gh.repo, gh.branch, gh.token, gh.lembrar].forEach(el => el.addEventListener("change", salvarCfg));
+
+function status(msg, tipo){
+  const el = $("status");
+  el.hidden = !msg;
+  el.textContent = msg || "";
+  el.className = "status" + (tipo ? " " + tipo : "");
+}
+function paraBase64(f){
+  return new Promise((ok, falha) => {
+    const r = new FileReader();
+    r.onload = () => ok(String(r.result).split(",")[1]);
+    r.onerror = () => falha(new Error("Não foi possível ler o arquivo."));
+    r.readAsDataURL(f);
+  });
+}
+async function erroGH(r){
+  let m = "";
+  try { m = (await r.json()).message || ""; } catch {}
+  if (r.status === 401) return new Error("Token inválido ou expirado. Gere um novo no GitHub.");
+  if (r.status === 403) return new Error("O token não tem permissão de escrita (Contents: Read and write) neste repositório.");
+  if (r.status === 404) return new Error("Repositório não encontrado, ou o token não tem acesso a ele. Confira usuário, repositório e token.");
+  if (r.status === 422) return new Error("O GitHub recusou: " + (m || "confira se a branch existe."));
+  return new Error("Erro " + r.status + (m ? ": " + m : ""));
+}
+
+$("enviar").addEventListener("click", async () => {
+  const f = arquivoSel, btn = $("enviar");
+  if (!f) return status("Escolha o arquivo primeiro.", "erro");
+  if (!EXT[f.name.split(".").pop().toLowerCase()]) return status("Só são aceitos arquivos .zip, .rar ou .7z.", "erro");
+  if (!v(gh.token)) return status("Cole o token do GitHub.", "erro");
+  if (f.size > 95 * 1024 * 1024) return status("Arquivo acima de 95 MB. O GitHub recusa arquivos acima de 100 MB no repositório; use uma Release.", "erro");
+
+  salvarCfg();
+  btn.disabled = true;
+  status("Enviando... arquivos grandes podem demorar.");
+  try {
+    const api = `https://api.github.com/repos/${v(gh.user)}/${v(gh.repo)}/contents/${encodeURI(f.name)}`;
+    const headers = {
+      Authorization: "Bearer " + v(gh.token),
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28"
+    };
+    let sha;
+    const ex = await fetch(`${api}?ref=${encodeURIComponent(v(gh.branch))}`, { headers });
+    if (ex.ok) sha = (await ex.json()).sha;
+    else if (ex.status !== 404) throw await erroGH(ex);
+
+    const content = await paraBase64(f);
+    const r = await fetch(api, {
+      method: "PUT",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: (sha ? "Atualiza " : "Adiciona ") + f.name,
+        content, branch: v(gh.branch), ...(sha ? { sha } : {})
+      })
+    });
+    if (!r.ok) throw await erroGH(r);
+    status(sha ? "Arquivo atualizado no GitHub. O bloco abaixo já está com o link certo." : "Arquivo enviado para o GitHub. Agora copie o bloco e cole no index.html do site.", "ok");
+  } catch (e) {
+    status(e.message || "Falha de conexão. Tente de novo.", "erro");
+  } finally {
+    btn.disabled = false;
+  }
 });
 
 atualizar();
