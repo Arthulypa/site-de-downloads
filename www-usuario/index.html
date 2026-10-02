@@ -104,10 +104,21 @@ footer{margin-top:56px;font-size:.92rem;opacity:.75}
 .menu-topo .btn{padding:6px 14px;font-size:.95rem;box-shadow:3px 3px 0 var(--tinta)}
 .menu-topo .btn:hover{box-shadow:1px 1px 0 var(--tinta)}
 .menu-topo .btn:active{box-shadow:0 0 0 var(--tinta)}
-.sec-btn{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;font-weight:600;font-size:1.1rem;color:var(--tinta);background:var(--papel);border:var(--borda);padding:12px 14px;margin-bottom:16px;cursor:pointer;box-shadow:4px 4px 0 var(--tinta);transition:transform .08s,box-shadow .08s}
+.sec-btn{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;font-weight:600;font-size:1.1rem;color:var(--tinta);background:var(--papel);border:var(--borda);padding:12px 14px;cursor:pointer;box-shadow:4px 4px 0 var(--tinta);transition:transform .08s,box-shadow .08s}
 .sec-btn:hover{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--tinta)}
-.sec-btn[aria-current="true"]{background:var(--manteiga);color:#17143A}
-.sec-btn .n{font-size:.9rem;border:2px solid var(--tinta);border-radius:99px;padding:0 9px;background:var(--branco);color:var(--tinta)}
+.sec-btn[aria-current="true"],.sub-btn[aria-current="true"]{background:var(--manteiga);color:#17143A}
+.sec-item{margin-bottom:16px}
+.sec-linha{display:flex;gap:10px;align-items:stretch}
+.sec-linha .sec-btn{flex:1;width:auto;min-width:0}
+.sec-seta{flex:none;width:48px;display:flex;align-items:center;justify-content:center;border:var(--borda);background:var(--papel);cursor:pointer;box-shadow:4px 4px 0 var(--tinta);transition:transform .08s,box-shadow .08s}
+.sec-seta:hover{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--tinta)}
+.sec-seta .seta{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:10px solid var(--tinta);transition:transform .15s}
+.sec-seta[aria-expanded="true"] .seta{transform:rotate(180deg)}
+.sub-lista{margin:16px 0 0 14px;display:flex;flex-direction:column;gap:12px;border-left:3px solid var(--tinta);padding-left:14px}
+.sub-btn{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;font-weight:600;font-size:1rem;color:var(--tinta);background:var(--papel);border:2px solid var(--tinta);padding:9px 12px;cursor:pointer;box-shadow:3px 3px 0 var(--tinta);transition:transform .08s,box-shadow .08s}
+.sub-btn:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--tinta)}
+.sub-cab{grid-column:1/-1;font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;font-size:1.3rem;letter-spacing:-.02em;margin:10px 0 -8px;display:flex;align-items:center;gap:10px}
+.sec-btn .n,.sub-btn .n,.sub-cab .n{font-size:.9rem;border:2px solid var(--tinta);border-radius:99px;padding:0 9px;background:var(--branco);color:var(--tinta)}
 .voltar{color:var(--cobalto);font-weight:600}
 .pcard{background:var(--branco);border:var(--borda);box-shadow:var(--sombra);max-width:720px;margin-top:8px}
 .pcard h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:clamp(2rem,7vw,3rem);line-height:1;letter-spacing:-.03em;margin:0 0 12px}
@@ -185,38 +196,61 @@ let LISTA = [...DOWNLOADS];
 const normSecao = t => { t = String(t ?? "").trim().replace(/\s+/g, " "); return t.toLowerCase() === "principal" ? "" : t; };
 const menu = document.getElementById("menu");
 const menuLista = document.getElementById("menu-lista");
-let SEC = ""; /* "" = principal; senão o nome da section em minúsculas */
+const normSub = t => String(t ?? "").trim().replace(/\s+/g, " ");
+const doSec = d => normSecao(d.secao).toLowerCase();
+const doSub = d => normSub(d.subsecao).toLowerCase();
+let SEC = "";  /* "" = principal; senão o nome da section em minúsculas */
+let SUB = "";  /* "" = a section inteira; senão o nome da subsection em minúsculas */
+const ABERTAS = new Set(); /* sections com a lista de subsections aberta no menu */
 
-function outrasSecoes(){
+function estrutura(){
   const m = new Map();
+  const get = (k, nome) => { if (!m.has(k)) m.set(k, { k, nome, n: 0, subs: new Map() }); return m.get(k); };
+  get("", "Principal");
   LISTA.forEach(d => {
-    const n = normSecao(d.secao);
-    if (!n) return;
-    const k = n.toLowerCase();
-    if (!m.has(k)) m.set(k, { k, nome: n, n: 0 });
-    m.get(k).n++;
+    const nome = normSecao(d.secao);
+    const sec = get(nome.toLowerCase(), nome || "Principal");
+    sec.n++;
+    const sn = normSub(d.subsecao);
+    if (sn) {
+      const sk = sn.toLowerCase();
+      if (!sec.subs.has(sk)) sec.subs.set(sk, { k: sk, nome: sn, n: 0 });
+      sec.subs.get(sk).n++;
+    }
   });
-  return [...m.values()];
+  return m;
+}
+
+function montarMenu(est){
+  menuLista.innerHTML = [...est.values()].map(s => {
+    const subs = [...s.subs.values()];
+    const aberta = subs.length > 0 && ABERTAS.has(s.k);
+    return `<div class="sec-item">
+      <div class="sec-linha">
+        <button type="button" class="sec-btn" data-k="${esc(s.k)}" data-s="" aria-current="${s.k === SEC && !SUB}"><span>${esc(s.nome)}</span><span class="n">${s.n}</span></button>
+        ${subs.length ? `<button type="button" class="sec-seta" data-exp="${esc(s.k)}" aria-expanded="${aberta}" aria-label="Subsections de ${esc(s.nome)}"><span class="seta" aria-hidden="true"></span></button>` : ""}
+      </div>
+      ${aberta ? `<div class="sub-lista">${subs.map(x => `<button type="button" class="sub-btn" data-k="${esc(s.k)}" data-s="${esc(x.k)}" aria-current="${s.k === SEC && x.k === SUB}"><span>${esc(x.nome)}</span><span class="n">${x.n}</span></button>`).join("")}</div>` : ""}
+    </div>`;
+  }).join("");
 }
 
 function desenhar(){
-  const outras = outrasSecoes();
-  if (SEC && !outras.some(s => s.k === SEC)) SEC = "";
-  const atual = outras.find(s => s.k === SEC);
-  document.getElementById("sec-titulo").textContent = atual ? atual.nome : "Principal";
+  const est = estrutura();
+  if (!est.has(SEC)) { SEC = ""; SUB = ""; }
+  const sec = est.get(SEC);
+  if (SUB && !sec.subs.has(SUB)) SUB = "";
+  const sub = SUB ? sec.subs.get(SUB) : null;
+  document.getElementById("sec-titulo").textContent = sec.nome + (sub ? " \u203A " + sub.nome : "");
+  montarMenu(est);
 
-  const nPrin = LISTA.filter(d => !normSecao(d.secao)).length;
-  const itensMenu = [{ k: "", nome: "Principal", n: nPrin }, ...outras];
-  menuLista.innerHTML = itensMenu.map(s =>
-    `<button type="button" class="sec-btn" data-k="${esc(s.k)}" aria-current="${s.k === SEC}"><span>${esc(s.nome)}</span><span class="n">${s.n}</span></button>`).join("");
-
-  const itens = LISTA.map((d, i) => [d, i]).filter(([d]) => normSecao(d.secao).toLowerCase() === SEC);
+  const itens = LISTA.map((d, i) => [d, i]).filter(([d]) => doSec(d) === SEC && (!SUB || doSub(d) === SUB));
   if (!itens.length) {
     const msg = !LISTA.length ? "Nenhum download publicado ainda." : (SEC ? "Nenhum download nesta section." : "Nenhum download na principal.");
     grade.innerHTML = '<div class="vazio">' + msg + '</div>';
     return;
   }
-  grade.innerHTML = itens.map(([d, i]) => `
+  const cartao = ([d, i]) => `
     <article class="cartao" role="button" tabindex="0" data-i="${i}" aria-label="Ver detalhes de ${esc(d.nome)}">
       <div class="topo">
         <span class="tipo">${esc(d.tipo)}</span>
@@ -226,7 +260,15 @@ function desenhar(){
       <p>${esc(d.descricao)}</p>
       <div class="meta"><span>${esc(d.tamanho)}</span><span>${esc(d.data)}</span></div>
       <button class="btn" type="button">Baixar</button>
-    </article>`).join("");
+    </article>`;
+  if (SUB || !sec.subs.size) { grade.innerHTML = itens.map(cartao).join(""); return; }
+  /* section com subsections: primeiro os cards sem subsection, depois cada subsection com seu título */
+  let html = itens.filter(([d]) => !doSub(d)).map(cartao).join("");
+  sec.subs.forEach(x => {
+    html += `<h3 class="sub-cab">${esc(x.nome)}<span class="n">${x.n}</span></h3>` +
+      itens.filter(([d]) => doSub(d) === x.k).map(cartao).join("");
+  });
+  grade.innerHTML = html;
 }
 desenhar();
 
@@ -234,9 +276,19 @@ document.getElementById("menu-abrir").addEventListener("click", () => menu.showM
 document.getElementById("menu-fechar").addEventListener("click", () => menu.close());
 menu.addEventListener("click", e => { if (e.target === menu) menu.close(); });
 menuLista.addEventListener("click", e => {
-  const b = e.target.closest(".sec-btn");
+  const seta = e.target.closest(".sec-seta");
+  if (seta) {
+    const k = seta.dataset.exp;
+    if (ABERTAS.has(k)) ABERTAS.delete(k); else ABERTAS.add(k);
+    desenhar();
+    [...menuLista.querySelectorAll(".sec-seta")].find(x => x.dataset.exp === k)?.focus();
+    return;
+  }
+  const b = e.target.closest(".sec-btn, .sub-btn");
   if (!b) return;
   SEC = b.dataset.k;
+  SUB = b.dataset.s || "";
+  ABERTAS.add(SEC);
   desenhar();
   menu.close();
   window.scrollTo({ top: 0 });
