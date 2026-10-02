@@ -46,7 +46,9 @@ header p{max-width:46ch;margin:0;font-size:1.15rem}
 .cartao{
   background:var(--branco);border:var(--borda);box-shadow:var(--sombra);
   padding:22px;display:flex;flex-direction:column;gap:12px;
+  cursor:pointer;transition:transform .1s,box-shadow .1s;
 }
+.cartao:hover{transform:translate(-2px,-2px);box-shadow:8px 8px 0 var(--tinta)}
 .topo{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .tipo{
   font-weight:600;font-size:.9rem;background:var(--cobalto);color:#fff;
@@ -72,7 +74,7 @@ header p{max-width:46ch;margin:0;font-size:1.15rem}
 
 dialog{
   border:var(--borda);box-shadow:10px 10px 0 var(--tinta);background:var(--branco);color:var(--tinta);
-  padding:28px;max-width:min(440px,92vw);width:100%;
+  padding:0;max-width:min(560px,94vw);width:100%;max-height:90vh;overflow:auto;
 }
 dialog::backdrop{background:rgba(23,20,58,.6)}
 dialog[open]{animation:pop .18s ease-out}
@@ -80,6 +82,12 @@ dialog[open]{animation:pop .18s ease-out}
 dialog h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:1.7rem;line-height:1.1;margin:0 0 8px;letter-spacing:-.02em}
 dialog p{margin:0 0 18px}
 .acoes{display:flex;gap:12px;flex-wrap:wrap}
+.m-previa{border-bottom:var(--borda);background:var(--cobalto);aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.m-previa img{width:100%;height:100%;object-fit:cover;display:block}
+.m-previa span{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:clamp(3rem,16vw,6rem);letter-spacing:-.04em;color:#fff}
+.m-corpo{padding:24px 28px 28px}
+.m-corpo .meta{margin-bottom:14px}
+.m-detalhes{white-space:pre-line}
 .vazio{border:var(--borda);border-style:dashed;padding:32px;text-align:center;background:var(--branco)}
 footer{margin-top:56px;font-size:.92rem;opacity:.75}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -94,25 +102,28 @@ footer{margin-top:56px;font-size:.92rem;opacity:.75}
 
   <main id="grade" class="grade" aria-live="polite"></main>
 
-  <footer>Para adicionar um download, edite a lista <code>DOWNLOADS</code> no <code>index.html</code>.</footer>
+  <footer>Para adicionar um download, coloque o arquivo na pasta <code>download/</code> e edite a lista <code>DOWNLOADS</code> no <code>index.html</code>.</footer>
 </div>
 
 <dialog id="modal" aria-labelledby="m-titulo">
-  <h3 id="m-titulo">Seu download está pronto</h3>
-  <p id="m-desc"></p>
-  <div class="acoes">
-    <a id="m-link" class="btn" href="#" target="_blank" rel="noopener noreferrer" download>Baixar agora</a>
-    <button id="m-copiar" class="btn sec" type="button">Copiar link</button>
-    <button id="m-fechar" class="btn sec" type="button">Fechar</button>
+  <div class="m-previa" id="m-previa"></div>
+  <div class="m-corpo">
+    <h3 id="m-titulo"></h3>
+    <div class="meta" id="m-meta"></div>
+    <p id="m-desc" class="m-detalhes"></p>
+    <div class="acoes">
+      <a id="m-link" class="btn" href="#" download>Baixar agora</a>
+      <button id="m-copiar" class="btn sec" type="button">Copiar link</button>
+      <button id="m-fechar" class="btn sec" type="button">Fechar</button>
+    </div>
   </div>
 </dialog>
 
 <script>
 /* ============================================================
    EDITE AQUI: cada item vira um cartão no site.
-   "url" é o link REAL do arquivo (aparece só quando a pessoa clica em Baixar).
-   Exemplo GitHub Releases:
-   https://github.com/SEU_USUARIO/SEU_REPO/releases/download/v1.0.0/arquivo.zip
+   "url" é o caminho do arquivo dentro da pasta download/ (ou um link externo).
+   "detalhes" e "imagem" são opcionais.
    ============================================================ */
 const DOWNLOADS = [
   {
@@ -122,7 +133,9 @@ const DOWNLOADS = [
     tipo: "ZIP",
     tamanho: "2 MB",
     data: "01/10/2026",
-    url: "https://github.com/SEU_USUARIO/SEU_REPO/releases/download/v1.0.0/arquivo.zip"
+    detalhes: "Texto maior que aparece ao abrir o cartão: o que tem dentro, como instalar, o que mudou.",
+    imagem: "", // opcional: ex. "download/capa.png" (se vazio, mostra o tipo do arquivo)
+    url: "download/arquivo.zip" // o arquivo fica na pasta download/ do repositório
   }
 ];
 
@@ -137,7 +150,7 @@ if (!DOWNLOADS.length) {
   grade.innerHTML = '<div class="vazio">Nenhum download publicado ainda. Adicione o primeiro na lista DOWNLOADS.</div>';
 } else {
   grade.innerHTML = DOWNLOADS.map((d, i) => `
-    <article class="cartao">
+    <article class="cartao" role="button" tabindex="0" data-i="${i}" aria-label="Ver detalhes de ${esc(d.nome)}">
       <div class="topo">
         <span class="tipo">${esc(d.tipo)}</span>
         <span class="versao">${esc(d.versao)}</span>
@@ -145,19 +158,31 @@ if (!DOWNLOADS.length) {
       <h2>${esc(d.nome)}</h2>
       <p>${esc(d.descricao)}</p>
       <div class="meta"><span>${esc(d.tamanho)}</span><span>${esc(d.data)}</span></div>
-      <button class="btn" type="button" data-i="${i}">Baixar</button>
+      <button class="btn" type="button">Baixar</button>
     </article>`).join("");
 }
 
-grade.addEventListener("click", e => {
-  const b = e.target.closest("button[data-i]");
-  if (!b) return;
-  const d = DOWNLOADS[b.dataset.i];
-  mDesc.textContent = `${d.nome} · ${d.versao} · ${d.tamanho}`;
+function abrir(i){
+  const d = DOWNLOADS[i];
+  document.getElementById("m-titulo").textContent = d.nome;
+  document.getElementById("m-meta").innerHTML = [d.tipo, d.versao, d.tamanho, d.data].filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join("");
+  mDesc.textContent = d.detalhes || d.descricao;
+  const previa = document.getElementById("m-previa");
+  previa.innerHTML = d.imagem ? `<img src="${esc(d.imagem)}" alt="Prévia de ${esc(d.nome)}">` : `<span>${esc(d.tipo)}</span>`;
   mLink.href = d.url;
   mCopiar.textContent = "Copiar link";
-  mCopiar.dataset.url = d.url;
+  mCopiar.dataset.url = new URL(d.url, location.href).href;
   modal.showModal();
+}
+grade.addEventListener("click", e => {
+  const c = e.target.closest(".cartao");
+  if (c) abrir(c.dataset.i);
+});
+grade.addEventListener("keydown", e => {
+  if ((e.key === "Enter" || e.key === " ") && e.target.classList.contains("cartao")) {
+    e.preventDefault();
+    abrir(e.target.dataset.i);
+  }
 });
 
 mCopiar.addEventListener("click", async () => {
