@@ -91,13 +91,6 @@ dialog p{margin:0 0 18px}
 .vazio{border:var(--borda);border-style:dashed;padding:32px;text-align:center;background:var(--branco)}
 footer{margin-top:56px;font-size:.92rem;opacity:.75}
 [hidden]{display:none!important}
-.icone{
-  position:absolute;top:12px;right:12px;z-index:2;width:44px;height:44px;
-  display:flex;align-items:center;justify-content:center;
-  border:3px solid var(--tinta);background:var(--manteiga);color:#17143A;
-  box-shadow:3px 3px 0 var(--tinta);transition:transform .08s,box-shadow .08s;
-}
-.icone:hover{transform:translate(1px,1px);box-shadow:2px 2px 0 var(--tinta)}
 .voltar{color:var(--cobalto);font-weight:600}
 .pcard{background:var(--branco);border:var(--borda);box-shadow:var(--sombra);max-width:720px;margin-top:8px}
 .pcard h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:clamp(2rem,7vw,3rem);line-height:1;letter-spacing:-.03em;margin:0 0 12px}
@@ -119,9 +112,6 @@ footer{margin-top:56px;font-size:.92rem;opacity:.75}
 </div>
 
 <dialog id="modal" aria-labelledby="m-titulo">
-  <a id="m-abrir" class="icone" href="#" target="_blank" rel="noopener" aria-label="Abrir em página própria" title="Abrir em página própria" hidden>
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="square" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></svg>
-  </a>
   <div class="m-previa" id="m-previa"></div>
   <div class="m-corpo">
     <h3 id="m-titulo"></h3>
@@ -129,7 +119,9 @@ footer{margin-top:56px;font-size:.92rem;opacity:.75}
     <p id="m-desc" class="m-detalhes"></p>
     <div class="acoes">
       <a id="m-link" class="btn" href="#" download>Baixar agora</a>
-      <button id="m-copiar" class="btn sec" type="button">Copiar link</button>
+      <button id="m-copiar" class="btn sec" type="button">Copiar link do arquivo</button>
+      <a id="m-abrir" class="btn sec" href="#" target="_blank" rel="noopener" hidden>Abrir página</a>
+      <button id="m-copiar-pag" class="btn sec" type="button" hidden>Copiar link da página</button>
       <button id="m-fechar" class="btn sec" type="button">Fechar</button>
     </div>
   </div>
@@ -200,7 +192,7 @@ function rotear(carregado){
   }
   document.title = d.nome + " · Downloads";
   secPagina.innerHTML = `
-    <p><a class="voltar" href="./">Voltar aos downloads</a></p>
+    ${d.voltar !== false ? '<p><a class="voltar" href="./">Voltar aos downloads</a></p>' : ""}
     <article class="pcard">
       <div class="m-previa">${d.imagem ? `<img src="${esc(d.imagem)}" alt="Prévia de ${esc(d.nome)}">` : `<span>${esc(d.tipo)}</span>`}</div>
       <div class="m-corpo">
@@ -242,10 +234,14 @@ function abrir(i){
   const previa = document.getElementById("m-previa");
   previa.innerHTML = d.imagem ? `<img src="${esc(d.imagem)}" alt="Prévia de ${esc(d.nome)}">` : `<span>${esc(d.tipo)}</span>`;
   mLink.href = d.url;
-  const ab = document.getElementById("m-abrir");
-  ab.hidden = !(d.pagina && d.id);
-  if (d.id) ab.href = "?d=" + encodeURIComponent(d.id);
-  mCopiar.textContent = "Copiar link";
+  const bp = document.getElementById("m-copiar-pag");
+  bp.hidden = !(d.pagina && d.id);
+  bp.textContent = "Copiar link da página";
+  const ba = document.getElementById("m-abrir");
+  ba.hidden = !(d.pagina && d.id && d.abrir);
+  ba.href = `${location.pathname}?d=${encodeURIComponent(d.id || "")}`;
+  bp.dataset.url = `${location.origin}${location.pathname}?d=${encodeURIComponent(d.id || "")}`;
+  mCopiar.textContent = "Copiar link do arquivo";
   mCopiar.dataset.url = new URL(d.url, location.href).href;
   modal.showModal();
 }
@@ -268,6 +264,7 @@ mCopiar.addEventListener("click", async () => {
     mCopiar.textContent = "Não foi possível copiar";
   }
 });
+document.getElementById("m-copiar-pag").addEventListener("click", e => copiar(e.target, e.target.dataset.url));
 document.getElementById("m-fechar").addEventListener("click", () => modal.close());
 modal.addEventListener("click", e => { if (e.target === modal) modal.close(); });
 </script>
