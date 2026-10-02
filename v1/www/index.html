@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meus Downloads</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Familjen+Grotesk:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --papel:#E8E4F5;
+  --tinta:#17143A;
+  --cobalto:#3A3AF0;
+  --manteiga:#FFD84A;
+  --branco:#FFFFFF;
+  --borda:3px solid var(--tinta);
+  --sombra:6px 6px 0 var(--tinta);
+}
+@media (prefers-color-scheme:dark){
+  :root{--papel:#17143A;--tinta:#F2EFFF;--branco:#241F5C;--cobalto:#7B7BFF;--manteiga:#FFD84A}
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;min-height:100vh;
+  background:var(--papel);color:var(--tinta);
+  font-family:"Familjen Grotesk",system-ui,sans-serif;font-size:1.05rem;line-height:1.55;
+  background-image:radial-gradient(color-mix(in srgb,var(--tinta) 14%,transparent) 1.5px,transparent 1.5px);
+  background-size:22px 22px;
+}
+.wrap{max-width:960px;margin:0 auto;padding:48px 20px 72px}
+header{margin-bottom:44px}
+h1{
+  font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;
+  font-size:clamp(3.2rem,12vw,7rem);line-height:.9;letter-spacing:-.04em;margin:0 0 18px;
+}
+h1 .sticker{
+  display:inline-block;transform:rotate(-4deg);
+  background:var(--manteiga);color:#17143A;border:var(--borda);border-color:#17143A;
+  padding:0 .18em;margin-left:.1em;box-shadow:5px 5px 0 var(--tinta);
+}
+header p{max-width:46ch;margin:0;font-size:1.15rem}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:28px}
+.cartao{
+  background:var(--branco);border:var(--borda);box-shadow:var(--sombra);
+  padding:22px;display:flex;flex-direction:column;gap:12px;
+}
+.topo{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.tipo{
+  font-weight:600;font-size:.9rem;background:var(--cobalto);color:#fff;
+  padding:2px 10px;border:2px solid var(--tinta);border-radius:99px;
+}
+.versao{font-size:.95rem;opacity:.8}
+.cartao h2{
+  font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;
+  font-size:1.6rem;line-height:1.1;letter-spacing:-.02em;margin:0;
+}
+.cartao p{margin:0;flex:1}
+.meta{font-size:.92rem;opacity:.8;display:flex;gap:14px;flex-wrap:wrap}
+.btn{
+  font:inherit;font-weight:600;font-size:1.05rem;cursor:pointer;text-decoration:none;text-align:center;
+  display:inline-block;padding:12px 18px;border:var(--borda);
+  background:var(--manteiga);color:#17143A;border-color:var(--tinta);
+  box-shadow:4px 4px 0 var(--tinta);transition:transform .08s,box-shadow .08s;
+}
+.btn:hover{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--tinta)}
+.btn:active{transform:translate(4px,4px);box-shadow:0 0 0 var(--tinta)}
+.btn.sec{background:var(--branco);color:var(--tinta)}
+:focus-visible{outline:4px solid var(--cobalto);outline-offset:3px}
+
+dialog{
+  border:var(--borda);box-shadow:10px 10px 0 var(--tinta);background:var(--branco);color:var(--tinta);
+  padding:28px;max-width:min(440px,92vw);width:100%;
+}
+dialog::backdrop{background:rgba(23,20,58,.6)}
+dialog[open]{animation:pop .18s ease-out}
+@keyframes pop{from{transform:scale(.94) rotate(-1deg);opacity:0}to{transform:none;opacity:1}}
+dialog h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:1.7rem;line-height:1.1;margin:0 0 8px;letter-spacing:-.02em}
+dialog p{margin:0 0 18px}
+.acoes{display:flex;gap:12px;flex-wrap:wrap}
+.vazio{border:var(--borda);border-style:dashed;padding:32px;text-align:center;background:var(--branco)}
+footer{margin-top:56px;font-size:.92rem;opacity:.75}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Meus downloads<span class="sticker">grátis</span></h1>
+    <p id="intro">Arquivos que eu publico. Escolha um, toque em baixar e pegue o link.</p>
+  </header>
+
+  <main id="grade" class="grade" aria-live="polite"></main>
+
+  <footer>Para adicionar um download, edite a lista <code>DOWNLOADS</code> no <code>index.html</code>.</footer>
+</div>
+
+<dialog id="modal" aria-labelledby="m-titulo">
+  <h3 id="m-titulo">Seu download está pronto</h3>
+  <p id="m-desc"></p>
+  <div class="acoes">
+    <a id="m-link" class="btn" href="#" target="_blank" rel="noopener noreferrer" download>Baixar agora</a>
+    <button id="m-copiar" class="btn sec" type="button">Copiar link</button>
+    <button id="m-fechar" class="btn sec" type="button">Fechar</button>
+  </div>
+</dialog>
+
+<script>
+/* ============================================================
+   EDITE AQUI: cada item vira um cartão no site.
+   "url" é o link REAL do arquivo (aparece só quando a pessoa clica em Baixar).
+   Exemplo GitHub Releases:
+   https://github.com/SEU_USUARIO/SEU_REPO/releases/download/v1.0.0/arquivo.zip
+   ============================================================ */
+const DOWNLOADS = [
+  {
+    nome: "Nome do primeiro arquivo",
+    descricao: "Uma frase curta explicando o que é e para que serve.",
+    versao: "v1.0.0",
+    tipo: "ZIP",
+    tamanho: "2 MB",
+    data: "01/10/2026",
+    url: "https://github.com/SEU_USUARIO/SEU_REPO/releases/download/v1.0.0/arquivo.zip"
+  }
+];
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const grade = document.getElementById("grade");
+const modal = document.getElementById("modal");
+const mLink = document.getElementById("m-link");
+const mDesc = document.getElementById("m-desc");
+const mCopiar = document.getElementById("m-copiar");
+
+if (!DOWNLOADS.length) {
+  grade.innerHTML = '<div class="vazio">Nenhum download publicado ainda. Adicione o primeiro na lista DOWNLOADS.</div>';
+} else {
+  grade.innerHTML = DOWNLOADS.map((d, i) => `
+    <article class="cartao">
+      <div class="topo">
+        <span class="tipo">${esc(d.tipo)}</span>
+        <span class="versao">${esc(d.versao)}</span>
+      </div>
+      <h2>${esc(d.nome)}</h2>
+      <p>${esc(d.descricao)}</p>
+      <div class="meta"><span>${esc(d.tamanho)}</span><span>${esc(d.data)}</span></div>
+      <button class="btn" type="button" data-i="${i}">Baixar</button>
+    </article>`).join("");
+}
+
+grade.addEventListener("click", e => {
+  const b = e.target.closest("button[data-i]");
+  if (!b) return;
+  const d = DOWNLOADS[b.dataset.i];
+  mDesc.textContent = `${d.nome} · ${d.versao} · ${d.tamanho}`;
+  mLink.href = d.url;
+  mCopiar.textContent = "Copiar link";
+  mCopiar.dataset.url = d.url;
+  modal.showModal();
+});
+
+mCopiar.addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(mCopiar.dataset.url);
+    mCopiar.textContent = "Link copiado";
+  } catch {
+    mCopiar.textContent = "Não foi possível copiar";
+  }
+});
+document.getElementById("m-fechar").addEventListener("click", () => modal.close());
+modal.addEventListener("click", e => { if (e.target === modal) modal.close(); });
+</script>
+</body>
+</html>
