@@ -1,5 +1,21 @@
 [
   {
+    "nome": "TESTEE",
+    "id": "bedrock-painel-axenthost-visual-v31",
+    "descricao": "TESTEE",
+    "versao": "v1.0.0",
+    "tipo": "ZIP",
+    "secao": "",
+    "tamanho": "122 KB",
+    "data": "02/10/2026",
+    "detalhes": "1155 DO ET",
+    "imagem": "",
+    "pagina": false,
+    "abrir": false,
+    "voltar": true,
+    "url": "https://github.com/Arthulypa/site-de-downloads/raw/refs/heads/arquivos/bedrock-painel-axenthost-visual-v31.zip"
+  },
+  {
     "nome": "TESTE",
     "id": "bedrock-painel-ip-hostname-playit-2",
     "descricao": "TESTE",
