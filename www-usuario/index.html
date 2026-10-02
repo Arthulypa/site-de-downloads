@@ -102,7 +102,7 @@ footer{margin-top:56px;font-size:.92rem;opacity:.75}
 
   <main id="grade" class="grade" aria-live="polite"></main>
 
-  <footer>Para adicionar um download, coloque o arquivo na pasta <code>download/</code> e edite a lista <code>DOWNLOADS</code> no <code>index.html</code>.</footer>
+  <footer>Para adicionar um download, publique pelo painel <code>dev/</code>.</footer>
 </div>
 
 <dialog id="modal" aria-labelledby="m-titulo">
@@ -125,43 +125,11 @@ footer{margin-top:56px;font-size:.92rem;opacity:.75}
    "url" é o caminho do arquivo dentro da pasta download/ (ou um link externo).
    "detalhes" e "imagem" são opcionais.
    ============================================================ */
-const DOWNLOADS = [
-  {
-    nome: "Nome do primeiro arquivo",
-    descricao: "Uma frase curta explicando o que é e para que serve.",
-    versao: "v1.0.0",
-    tipo: "ZIP",
-    tamanho: "2 MB",
-    data: "01/10/2026",
-    detalhes: "Texto maior que aparece ao abrir o cartão: o que tem dentro, como instalar, o que mudou.",
-    imagem: "", // opcional: ex. "download/capa.png" (se vazio, mostra o tipo do arquivo)
-    url: "download/arquivo.zip" // o arquivo fica na pasta download/ do repositório
-  },
-  
-    {
-    nome: "TRES ADONS",
-    descricao: "Teste",
-    versao: "v1.0.0",
-    tipo: "ZIP",
-    tamanho: "1.3 MB",
-    data: "01/10/2026",
-    detalhes: "Teste123",
-    imagem: "",
-    url: "https://github.com/Arthulypa/site-de-downloads/raw/refs/heads/arquivos/TRES%20ADONS.zip"
-  },
-  
-  {
-    nome: "Teste",
-    descricao: "Apenas um teste",
-    versao: "v1.0.0",
-    tipo: "ZIP",
-    tamanho: "142 KB",
-    data: "01/10/2026",
-    detalhes: "Apenas um teste",
-    imagem: "",
-    url: "https://github.com/Arthulypa/site-de-downloads/raw/refs/heads/arquivos/bedrock-painel-ip-hostname-playit.zip"
-  }
-];
+/* Link da lista que o painel dev atualiza sozinho (deixe "" para desligar). */
+const JSON_URL = "https://raw.githubusercontent.com/Arthulypa/site-de-downloads/arquivos/downloads.json";
+
+/* Downloads manuais (opcional): cole aqui os blocos copiados do painel dev. */
+const DOWNLOADS = [];
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const grade = document.getElementById("grade");
@@ -170,10 +138,13 @@ const mLink = document.getElementById("m-link");
 const mDesc = document.getElementById("m-desc");
 const mCopiar = document.getElementById("m-copiar");
 
-if (!DOWNLOADS.length) {
-  grade.innerHTML = '<div class="vazio">Nenhum download publicado ainda. Adicione o primeiro na lista DOWNLOADS.</div>';
-} else {
-  grade.innerHTML = DOWNLOADS.map((d, i) => `
+let LISTA = [...DOWNLOADS];
+function desenhar(){
+  if (!LISTA.length) {
+    grade.innerHTML = '<div class="vazio">Nenhum download publicado ainda.</div>';
+    return;
+  }
+  grade.innerHTML = LISTA.map((d, i) => `
     <article class="cartao" role="button" tabindex="0" data-i="${i}" aria-label="Ver detalhes de ${esc(d.nome)}">
       <div class="topo">
         <span class="tipo">${esc(d.tipo)}</span>
@@ -185,9 +156,23 @@ if (!DOWNLOADS.length) {
       <button class="btn" type="button">Baixar</button>
     </article>`).join("");
 }
+desenhar();
+
+if (JSON_URL) {
+  fetch(JSON_URL, { cache: "no-store" })
+    .then(r => r.ok ? r.json() : [])
+    .then(rem => {
+      if (!Array.isArray(rem)) return;
+      rem = rem.filter(d => d && typeof d.url === "string" && !/^\s*javascript:/i.test(d.url));
+      const urls = new Set(rem.map(d => d.url));
+      LISTA = [...rem, ...DOWNLOADS.filter(d => !urls.has(d.url))];
+      desenhar();
+    })
+    .catch(() => {});
+}
 
 function abrir(i){
-  const d = DOWNLOADS[i];
+  const d = LISTA[i];
   document.getElementById("m-titulo").textContent = d.nome;
   document.getElementById("m-meta").innerHTML = [d.tipo, d.versao, d.tamanho, d.data].filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join("");
   mDesc.textContent = d.detalhes || d.descricao;
