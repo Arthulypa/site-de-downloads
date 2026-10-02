@@ -1,5 +1,27 @@
 [
   {
+    "nome": "TESTE",
+    "id": "bedrock-painel-ip-hostname-playit-2",
+    "descricao": "TESTE",
+    "versao": "v1.0.0",
+    "tipo": "ZIP",
+    "secao": "",
+    "subsecao": "",
+    "tamanho": "142 KB",
+    "data": "02/10/2026",
+    "detalhes": "TESTE",
+    "imagem": "",
+    "pagina": true,
+    "abrir": false,
+    "voltar": false,
+    "acaoBaixar": "download",
+    "urlPagina": "",
+    "senhaAtiva": true,
+    "senhaModo": "baixar",
+    "senhaHash": "97e7ae26dd76600646701e97840d52b6ab7cb23cd03f8fa8e50640d84b52b5e1",
+    "url": "https://github.com/Arthulypa/site-de-downloads/raw/refs/heads/arquivos/bedrock-painel-ip-hostname-playit%20(2).zip"
+  },
+  {
     "nome": "Ultramarine Overhaul",
     "id": "ultramarine-overhaul",
     "descricao": "Textura que facilita o uso do minecraft",
