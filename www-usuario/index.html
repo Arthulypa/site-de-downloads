@@ -90,6 +90,17 @@ dialog p{margin:0 0 18px}
 .m-detalhes{white-space:pre-line}
 .vazio{border:var(--borda);border-style:dashed;padding:32px;text-align:center;background:var(--branco)}
 footer{margin-top:56px;font-size:.92rem;opacity:.75}
+[hidden]{display:none!important}
+.icone{
+  position:absolute;top:12px;right:12px;z-index:2;width:44px;height:44px;
+  display:flex;align-items:center;justify-content:center;
+  border:3px solid var(--tinta);background:var(--manteiga);color:#17143A;
+  box-shadow:3px 3px 0 var(--tinta);transition:transform .08s,box-shadow .08s;
+}
+.icone:hover{transform:translate(1px,1px);box-shadow:2px 2px 0 var(--tinta)}
+.voltar{color:var(--cobalto);font-weight:600}
+.pcard{background:var(--branco);border:var(--borda);box-shadow:var(--sombra);max-width:720px;margin-top:8px}
+.pcard h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:clamp(2rem,7vw,3rem);line-height:1;letter-spacing:-.03em;margin:0 0 12px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -102,10 +113,15 @@ footer{margin-top:56px;font-size:.92rem;opacity:.75}
 
   <main id="grade" class="grade" aria-live="polite"></main>
 
+  <section id="pagina" hidden></section>
+
   <footer>Para adicionar um download, publique pelo painel <code>dev/</code>.</footer>
 </div>
 
 <dialog id="modal" aria-labelledby="m-titulo">
+  <a id="m-abrir" class="icone" href="#" target="_blank" rel="noopener" aria-label="Abrir em página própria" title="Abrir em página própria" hidden>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="square" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></svg>
+  </a>
   <div class="m-previa" id="m-previa"></div>
   <div class="m-corpo">
     <h3 id="m-titulo"></h3>
@@ -158,6 +174,52 @@ function desenhar(){
 }
 desenhar();
 
+const ID = new URLSearchParams(location.search).get("d");
+const secPagina = document.getElementById("pagina");
+
+function copiar(btn, texto){
+  const antes = btn.textContent;
+  (navigator.clipboard ? navigator.clipboard.writeText(texto) : Promise.reject())
+    .then(() => { btn.textContent = "Link copiado"; })
+    .catch(() => { btn.textContent = "Não foi possível copiar"; })
+    .finally(() => setTimeout(() => { btn.textContent = antes; }, 2000));
+}
+
+function rotear(carregado){
+  if (!ID) return;
+  document.querySelector("header").hidden = true;
+  document.querySelector("footer").hidden = true;
+  grade.hidden = true;
+  secPagina.hidden = false;
+  const d = LISTA.find(x => x.id === ID && x.pagina);
+  if (!d) {
+    secPagina.innerHTML = carregado
+      ? '<div class="vazio">Download não encontrado.<br><br><a class="btn" href="./">Voltar aos downloads</a></div>'
+      : '<div class="vazio">Carregando...</div>';
+    return;
+  }
+  document.title = d.nome + " · Downloads";
+  secPagina.innerHTML = `
+    <p><a class="voltar" href="./">Voltar aos downloads</a></p>
+    <article class="pcard">
+      <div class="m-previa">${d.imagem ? `<img src="${esc(d.imagem)}" alt="Prévia de ${esc(d.nome)}">` : `<span>${esc(d.tipo)}</span>`}</div>
+      <div class="m-corpo">
+        <h2>${esc(d.nome)}</h2>
+        <div class="meta">${[d.tipo, d.versao, d.tamanho, d.data].filter(Boolean).map(x => `<span>${esc(x)}</span>`).join("")}</div>
+        <p class="m-detalhes">${esc(d.detalhes || d.descricao)}</p>
+        <div class="acoes">
+          <a class="btn" href="${esc(d.url)}" download>Baixar agora</a>
+          <button class="btn sec" id="p-copiar-pag" type="button">Copiar link da página</button>
+          <button class="btn sec" id="p-copiar-arq" type="button">Copiar link do arquivo</button>
+        </div>
+      </div>
+    </article>`;
+  document.getElementById("p-copiar-pag").onclick = e => copiar(e.target, location.href);
+  document.getElementById("p-copiar-arq").onclick = e => copiar(e.target, new URL(d.url, location.href).href);
+}
+
+rotear(!JSON_URL);
+
 if (JSON_URL) {
   fetch(JSON_URL, { cache: "no-store" })
     .then(r => r.ok ? r.json() : [])
@@ -168,7 +230,8 @@ if (JSON_URL) {
       LISTA = [...rem, ...DOWNLOADS.filter(d => !urls.has(d.url))];
       desenhar();
     })
-    .catch(() => {});
+    .catch(() => {})
+    .finally(() => rotear(true));
 }
 
 function abrir(i){
@@ -179,6 +242,9 @@ function abrir(i){
   const previa = document.getElementById("m-previa");
   previa.innerHTML = d.imagem ? `<img src="${esc(d.imagem)}" alt="Prévia de ${esc(d.nome)}">` : `<span>${esc(d.tipo)}</span>`;
   mLink.href = d.url;
+  const ab = document.getElementById("m-abrir");
+  ab.hidden = !(d.pagina && d.id);
+  if (d.id) ab.href = "?d=" + encodeURIComponent(d.id);
   mCopiar.textContent = "Copiar link";
   mCopiar.dataset.url = new URL(d.url, location.href).href;
   modal.showModal();
