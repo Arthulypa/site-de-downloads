@@ -91,6 +91,23 @@ dialog p{margin:0 0 18px}
 .vazio{border:var(--borda);border-style:dashed;padding:32px;text-align:center;background:var(--branco)}
 footer{margin-top:56px;font-size:.92rem;opacity:.75}
 [hidden]{display:none!important}
+.menu-btn{font:inherit;font-weight:600;font-size:1.05rem;cursor:pointer;display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border:var(--borda);border-color:var(--tinta);background:var(--manteiga);color:#17143A;box-shadow:4px 4px 0 var(--tinta);margin-bottom:28px;transition:transform .08s,box-shadow .08s}
+.menu-btn:hover{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--tinta)}
+.menu-btn:active{transform:translate(4px,4px);box-shadow:0 0 0 var(--tinta)}
+.sec-titulo{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:clamp(1.6rem,5vw,2.2rem);letter-spacing:-.03em;line-height:1.05;margin:0 0 22px}
+#menu{margin:0;inset:0 auto 0 0;height:100vh;height:100dvh;max-height:none;width:min(340px,88vw);max-width:none;border:0;border-right:var(--borda);box-shadow:8px 0 0 var(--tinta)}
+#menu[open]{animation:desliza .2s ease-out}
+@keyframes desliza{from{transform:translateX(-100%)}to{transform:none}}
+.menu-corpo{padding:24px 22px 28px}
+.menu-topo{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}
+.menu-topo h3{margin:0}
+.menu-topo .btn{padding:6px 14px;font-size:.95rem;box-shadow:3px 3px 0 var(--tinta)}
+.menu-topo .btn:hover{box-shadow:1px 1px 0 var(--tinta)}
+.menu-topo .btn:active{box-shadow:0 0 0 var(--tinta)}
+.sec-btn{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;font-weight:600;font-size:1.1rem;color:var(--tinta);background:var(--papel);border:var(--borda);padding:12px 14px;margin-bottom:16px;cursor:pointer;box-shadow:4px 4px 0 var(--tinta);transition:transform .08s,box-shadow .08s}
+.sec-btn:hover{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--tinta)}
+.sec-btn[aria-current="true"]{background:var(--manteiga);color:#17143A}
+.sec-btn .n{font-size:.9rem;border:2px solid var(--tinta);border-radius:99px;padding:0 9px;background:var(--branco);color:var(--tinta)}
 .voltar{color:var(--cobalto);font-weight:600}
 .pcard{background:var(--branco);border:var(--borda);box-shadow:var(--sombra);max-width:720px;margin-top:8px}
 .pcard h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:clamp(2rem,7vw,3rem);line-height:1;letter-spacing:-.03em;margin:0 0 12px}
@@ -99,10 +116,18 @@ footer{margin-top:56px;font-size:.92rem;opacity:.75}
 </head>
 <body>
 <div class="wrap">
+  <div id="barra">
+    <button id="menu-abrir" class="menu-btn" type="button" aria-haspopup="dialog">
+      <svg width="20" height="14" viewBox="0 0 20 14" aria-hidden="true"><path d="M0 1.5h20M0 7h20M0 12.5h20" stroke="#17143A" stroke-width="3"/></svg>
+      Menu
+    </button>
+  </div>
   <header>
     <h1>Meus downloads<span class="sticker">grátis</span></h1>
     <p id="intro">Arquivos que eu publico. Escolha um, toque em baixar e pegue o link.</p>
   </header>
+
+  <h2 id="sec-titulo" class="sec-titulo"></h2>
 
   <main id="grade" class="grade" aria-live="polite"></main>
 
@@ -127,6 +152,16 @@ footer{margin-top:56px;font-size:.92rem;opacity:.75}
   </div>
 </dialog>
 
+<dialog id="menu" aria-labelledby="menu-t">
+  <div class="menu-corpo">
+    <div class="menu-topo">
+      <h3 id="menu-t">Sections</h3>
+      <button id="menu-fechar" class="btn sec" type="button">Fechar</button>
+    </div>
+    <nav id="menu-lista" aria-label="Sections"></nav>
+  </div>
+</dialog>
+
 <script>
 /* ============================================================
    EDITE AQUI: cada item vira um cartão no site.
@@ -147,12 +182,41 @@ const mDesc = document.getElementById("m-desc");
 const mCopiar = document.getElementById("m-copiar");
 
 let LISTA = [...DOWNLOADS];
+const normSecao = t => { t = String(t ?? "").trim().replace(/\s+/g, " "); return t.toLowerCase() === "principal" ? "" : t; };
+const menu = document.getElementById("menu");
+const menuLista = document.getElementById("menu-lista");
+let SEC = ""; /* "" = principal; senão o nome da section em minúsculas */
+
+function outrasSecoes(){
+  const m = new Map();
+  LISTA.forEach(d => {
+    const n = normSecao(d.secao);
+    if (!n) return;
+    const k = n.toLowerCase();
+    if (!m.has(k)) m.set(k, { k, nome: n, n: 0 });
+    m.get(k).n++;
+  });
+  return [...m.values()];
+}
+
 function desenhar(){
-  if (!LISTA.length) {
-    grade.innerHTML = '<div class="vazio">Nenhum download publicado ainda.</div>';
+  const outras = outrasSecoes();
+  if (SEC && !outras.some(s => s.k === SEC)) SEC = "";
+  const atual = outras.find(s => s.k === SEC);
+  document.getElementById("sec-titulo").textContent = atual ? atual.nome : "Principal";
+
+  const nPrin = LISTA.filter(d => !normSecao(d.secao)).length;
+  const itensMenu = [{ k: "", nome: "Principal", n: nPrin }, ...outras];
+  menuLista.innerHTML = itensMenu.map(s =>
+    `<button type="button" class="sec-btn" data-k="${esc(s.k)}" aria-current="${s.k === SEC}"><span>${esc(s.nome)}</span><span class="n">${s.n}</span></button>`).join("");
+
+  const itens = LISTA.map((d, i) => [d, i]).filter(([d]) => normSecao(d.secao).toLowerCase() === SEC);
+  if (!itens.length) {
+    const msg = !LISTA.length ? "Nenhum download publicado ainda." : (SEC ? "Nenhum download nesta section." : "Nenhum download na principal.");
+    grade.innerHTML = '<div class="vazio">' + msg + '</div>';
     return;
   }
-  grade.innerHTML = LISTA.map((d, i) => `
+  grade.innerHTML = itens.map(([d, i]) => `
     <article class="cartao" role="button" tabindex="0" data-i="${i}" aria-label="Ver detalhes de ${esc(d.nome)}">
       <div class="topo">
         <span class="tipo">${esc(d.tipo)}</span>
@@ -165,6 +229,18 @@ function desenhar(){
     </article>`).join("");
 }
 desenhar();
+
+document.getElementById("menu-abrir").addEventListener("click", () => menu.showModal());
+document.getElementById("menu-fechar").addEventListener("click", () => menu.close());
+menu.addEventListener("click", e => { if (e.target === menu) menu.close(); });
+menuLista.addEventListener("click", e => {
+  const b = e.target.closest(".sec-btn");
+  if (!b) return;
+  SEC = b.dataset.k;
+  desenhar();
+  menu.close();
+  window.scrollTo({ top: 0 });
+});
 
 const ID = new URLSearchParams(location.search).get("d");
 const secPagina = document.getElementById("pagina");
@@ -179,6 +255,8 @@ function copiar(btn, texto){
 
 function rotear(carregado){
   if (!ID) return;
+  document.getElementById("barra").hidden = true;
+  document.getElementById("sec-titulo").hidden = true;
   document.querySelector("header").hidden = true;
   document.querySelector("footer").hidden = true;
   grade.hidden = true;
