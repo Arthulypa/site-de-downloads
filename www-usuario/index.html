@@ -137,7 +137,8 @@ const DOWNLOADS = [
     imagem: "", // opcional: ex. "download/capa.png" (se vazio, mostra o tipo do arquivo)
     url: "download/arquivo.zip" // o arquivo fica na pasta download/ do repositório
   }
-
+];
+  
   {
     nome: "Teste",
     descricao: "Apenas um teste",
@@ -149,7 +150,6 @@ const DOWNLOADS = [
     imagem: "",
     url: "download/bedrock-painel-ip-hostname-playit.zip"
   },
-];
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const grade = document.getElementById("grade");
