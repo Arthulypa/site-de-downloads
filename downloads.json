@@ -12,7 +12,7 @@
     "detalhes": "TESTE",
     "imagem": "",
     "pagina": true,
-    "abrir": false,
+    "abrir": true,
     "voltar": false,
     "acaoBaixar": "download",
     "urlPagina": "",
