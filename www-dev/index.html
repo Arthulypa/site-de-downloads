@@ -118,7 +118,9 @@ ol li{margin-bottom:4px}
 #lista{display:flex;flex-direction:column;gap:28px}
 .grade-ed{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:22px}
 .grupo-t{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;font-size:1.3rem;letter-spacing:-.02em;margin:0 0 14px;display:flex;align-items:center;gap:10px}
-.grupo-t .n{font-family:"Familjen Grotesk",system-ui,sans-serif;font-size:.85rem;font-weight:600;border:2px solid var(--tinta);border-radius:99px;padding:0 9px}
+.grupo-t .n,.sub-t .n{font-family:"Familjen Grotesk",system-ui,sans-serif;font-size:.85rem;font-weight:600;border:2px solid var(--tinta);border-radius:99px;padding:0 9px}
+.sub-t{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;font-size:1.05rem;letter-spacing:-.01em;margin:22px 0 12px;display:flex;align-items:center;gap:8px}
+.sub-t::before{content:"\21B3"}
 .toggle{font:inherit;letter-spacing:inherit;color:inherit;background:none;border:0;padding:0;margin:0;display:flex;align-items:center;gap:12px;width:100%;text-align:left;cursor:pointer}
 .seta{flex:none;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:11px solid var(--tinta);transition:transform .15s}
 .toggle[aria-expanded="false"] .seta{transform:rotate(-90deg)}
@@ -211,6 +213,15 @@ dialog::backdrop{background:rgba(23,20,58,.6)}
           <input id="secao-nova" type="text" placeholder="Ex.: Add-ons para Bedrock" autocomplete="off">
         </label>
         <small class="dica">Sem section escolhida, o download fica na principal.</small>
+      </fieldset>
+
+      <fieldset style="border:0;padding:0;margin:0">
+        <legend style="font-weight:600;margin-bottom:6px;padding:0">Subsection</legend>
+        <div class="tipos" id="subsecoes"></div>
+        <label class="campo" id="sub-nova-box" style="margin-top:12px" hidden>Nome da nova subsection
+          <input id="sub-nova" type="text" placeholder="Ex.: Java" autocomplete="off">
+        </label>
+        <small class="dica">Fica dentro da section escolhida. Sem subsection, o download fica direto na section.</small>
       </fieldset>
 
       <label class="alterna">
@@ -333,6 +344,31 @@ const slug = t => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase
 
 const normSecao = t => { t = String(t ?? "").trim().replace(/\s+/g, " "); return t.toLowerCase() === "principal" ? "" : t; };
 let secaoSel = "";
+let subSel = "";
+const normSub = t => String(t ?? "").trim().replace(/\s+/g, " ");
+function nomesSubsecoes(sec){
+  const vistos = [];
+  listaAtual.forEach(d => {
+    if (normSecao(d.secao).toLowerCase() !== String(sec).toLowerCase()) return;
+    const n = normSub(d.subsecao);
+    if (n && !vistos.some(x => x.toLowerCase() === n.toLowerCase())) vistos.push(n);
+  });
+  return vistos;
+}
+function subAtual(){
+  if (subSel !== "__nova__") return subSel;
+  const n = normSub($("sub-nova").value);
+  return nomesSubsecoes(secaoAtual()).find(x => x.toLowerCase() === n.toLowerCase()) || n;
+}
+function desenharSubsecoes(){
+  const semSec = secaoSel === "__nova__" && !normSecao($("secao-nova").value);
+  const nomes = semSec ? [] : nomesSubsecoes(secaoAtual());
+  if (subSel && subSel !== "__nova__" && !nomes.some(x => x.toLowerCase() === subSel.toLowerCase())) nomes.push(subSel);
+  const opcoes = [["", "Nenhuma"], ...nomes.map(n => [n, n]), ["__nova__", "+ Nova subsection"]];
+  $("subsecoes").innerHTML = opcoes.map(([val, rot]) =>
+    `<label><input type="radio" name="subsecao" value="${esc(val)}"${val === subSel ? " checked" : ""}><span>${esc(rot)}</span></label>`).join("");
+  $("sub-nova-box").hidden = subSel !== "__nova__";
+}
 function nomesSecoes(){
   const vistos = [];
   listaAtual.forEach(d => {
@@ -353,13 +389,23 @@ function desenharSecoes(){
   $("secoes").innerHTML = opcoes.map(([val, rot]) =>
     `<label><input type="radio" name="secao" value="${esc(val)}"${val === secaoSel ? " checked" : ""}><span>${esc(rot)}</span></label>`).join("");
   $("secao-nova-box").hidden = secaoSel !== "__nova__";
+  desenharSubsecoes();
 }
 $("secoes").addEventListener("change", e => {
   secaoSel = e.target.value;
+  subSel = ""; $("sub-nova").value = ""; desenharSubsecoes();
   $("secao-nova-box").hidden = secaoSel !== "__nova__";
   if (secaoSel === "__nova__") $("secao-nova").focus();
   atualizar();
 });
+
+$("subsecoes").addEventListener("change", e => {
+  subSel = e.target.value;
+  $("sub-nova-box").hidden = subSel !== "__nova__";
+  if (subSel === "__nova__") $("sub-nova").focus();
+  atualizar();
+});
+$("secao-nova").addEventListener("input", desenharSubsecoes);
 
 function dados(){
   const tipo = tipoAtual();
@@ -371,6 +417,7 @@ function dados(){
     versao: $("versao").value.trim(),
     tipo,
     secao: secaoAtual(),
+    subsecao: subAtual(),
     tamanho: $("tamanho").value.trim(),
     data: $("data").value.trim(),
     detalhes: $("detalhes").value.trim(),
@@ -609,6 +656,7 @@ $("publicar").addEventListener("click", async () => {
   const erro = validar();
   if (erro) return status(erro, "erro");
   if (secaoSel === "__nova__" && !normSecao($("secao-nova").value)) return status("Digite o nome da nova section ou escolha outra.", "erro");
+  if (subSel === "__nova__" && !normSub($("sub-nova").value)) return status("Digite o nome da nova subsection ou escolha outra.", "erro");
   salvarCfg(); ocupado(true);
   $("publicar").textContent = editando ? "Editando..." : "Publicando...";
   try {
@@ -632,6 +680,7 @@ $("publicar").addEventListener("click", async () => {
     }
     linkPronto = true; estadoLink();
     secaoSel = normSecao(entrada.secao); $("secao-nova").value = "";
+    subSel = normSub(entrada.subsecao); $("sub-nova").value = "";
     listaAtual = nova; listaCarregada = true; desenharLista();
     $("publicar").textContent = "Salvo!";
     setTimeout(estadoEdicao, 2500);
@@ -650,6 +699,15 @@ function statusLista(msg, tipo){
   el.className = "status" + (tipo ? " " + tipo : "");
 }
 
+function cardEd([d, i]){
+  return `
+      <button type="button" class="card-ed${editando && editando.url === d.url ? " ativo" : ""}" data-ed="${i}" aria-label="Editar ${esc(d.nome)}">
+        <span class="t"><span class="tipo">${esc(d.tipo)}</span><span class="v">${esc(d.versao)}</span></span>
+        <strong>${esc(d.nome)}</strong>
+        <span class="d">${esc(d.descricao)}</span>
+        <span class="meta"><span>${esc(d.tamanho)}</span><span>${esc(d.data)}</span></span>
+      </button>`;
+}
 function desenharLista(){
   desenharSecoes();
   const el = $("lista");
@@ -658,14 +716,14 @@ function desenharLista(){
   el.innerHTML = grupos.map(([nome, rot]) => {
     const itens = listaAtual.map((d, i) => [d, i]).filter(([d]) => normSecao(d.secao).toLowerCase() === nome.toLowerCase());
     if (!itens.length) return "";
-    return `<div class="grupo"><h3 class="grupo-t">${esc(rot)}<span class="n">${itens.length}</span></h3><div class="grade-ed">` +
-      itens.map(([d, i]) => `
-      <button type="button" class="card-ed${editando && editando.url === d.url ? " ativo" : ""}" data-ed="${i}" aria-label="Editar ${esc(d.nome)}">
-        <span class="t"><span class="tipo">${esc(d.tipo)}</span><span class="v">${esc(d.versao)}</span></span>
-        <strong>${esc(d.nome)}</strong>
-        <span class="d">${esc(d.descricao)}</span>
-        <span class="meta"><span>${esc(d.tamanho)}</span><span>${esc(d.data)}</span></span>
-      </button>`).join("") + `</div></div>`;
+    const semSub = itens.filter(([d]) => !normSub(d.subsecao));
+    let html = `<div class="grupo"><h3 class="grupo-t">${esc(rot)}<span class="n">${itens.length}</span></h3>`;
+    if (semSub.length) html += `<div class="grade-ed">${semSub.map(cardEd).join("")}</div>`;
+    nomesSubsecoes(nome).forEach(sn => {
+      const si = itens.filter(([d]) => normSub(d.subsecao).toLowerCase() === sn.toLowerCase());
+      html += `<h4 class="sub-t">${esc(sn)}<span class="n">${si.length}</span></h4><div class="grade-ed">${si.map(cardEd).join("")}</div>`;
+    });
+    return html + "</div>";
   }).join("");
 }
 
@@ -693,7 +751,7 @@ $("carregar").addEventListener("click", carregarLista);
 function limparForm(){
   ["nome", "descricao", "detalhes", "tamanho", "imagem"].forEach(id => { $(id).value = ""; });
   $("versao").value = "v1.0.0";
-  secaoSel = ""; $("secao-nova").value = ""; desenharSecoes();
+  secaoSel = ""; subSel = ""; $("secao-nova").value = ""; $("sub-nova").value = ""; desenharSecoes();
   $("data").value = new Date().toLocaleDateString("pt-BR");
   document.querySelector('input[name="tipo"][value="ZIP"]').checked = true;
   $("pagina").checked = false; $("abrir").checked = false; $("voltar").checked = true;
@@ -725,7 +783,7 @@ function editar(i){
   const r = document.querySelector(`input[name="tipo"][value="${d.tipo}"]`);
   if (r) r.checked = true;
   $("pagina").checked = !!d.pagina; $("abrir").checked = !!d.abrir; $("voltar").checked = d.voltar !== false;
-  secaoSel = normSecao(d.secao); $("secao-nova").value = ""; desenharSecoes();
+  secaoSel = normSecao(d.secao); subSel = normSub(d.subsecao); $("secao-nova").value = ""; $("sub-nova").value = ""; desenharSecoes();
   let arq = String(d.url || "").split("/").pop();
   try { arq = decodeURIComponent(arq); } catch {}
   $("arq-txt").textContent = "Trocar arquivo (opcional)";
