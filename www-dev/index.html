@@ -41,7 +41,7 @@ h1 .sticker{
 h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;font-size:1.5rem;letter-spacing:-.02em;margin:0}
 label.campo{display:flex;flex-direction:column;gap:6px;font-weight:600}
 label.campo small{font-weight:400;opacity:.75}
-input[type=text],textarea{
+input[type=text],input[type=url],select,textarea{
   font:inherit;font-weight:400;color:var(--tinta);background:var(--papel);
   border:var(--borda);padding:10px 12px;width:100%;border-radius:0;
 }
@@ -238,6 +238,20 @@ dialog::backdrop{background:rgba(23,20,58,.6)}
 
 
 
+      <fieldset style="border:0;padding:0;margin:0">
+        <legend style="font-weight:600;margin-bottom:6px;padding:0">Ação do botão “Baixar agora”</legend>
+        <label class="campo">O que fazer ao clicar
+          <select id="acao-baixar">
+            <option value="download">Baixar o arquivo diretamente</option>
+            <option value="pagina">Enviar para outra página da web</option>
+          </select>
+          <small>Você pode fazer o botão baixar o arquivo ou mandar o visitante para uma página que você escolher.</small>
+        </label>
+        <label class="campo" id="url-pagina-box" hidden>Endereço da outra página
+          <input id="url-pagina" type="url" placeholder="https://exemplo.com/arquivo" autocomplete="url">
+        </label>
+      </fieldset>
+
       <label class="alterna">
         <span>Proteger com senha<small>Exige uma senha para abrir o download, baixar o arquivo e entrar na página própria.</small></span>
         <input id="senha-ativa" type="checkbox" role="switch">
@@ -247,6 +261,13 @@ dialog::backdrop{background:rgba(23,20,58,.6)}
         <label class="campo">Senha
           <input id="senha" type="password" autocomplete="new-password" placeholder="Digite a senha">
           <small id="senha-dica">A senha nunca é salva em texto puro; o painel publica somente um hash.</small>
+        </label>
+        <label class="campo">Quando pedir a senha
+          <select id="senha-modo">
+            <option value="todos">Popup e página</option>
+            <option value="baixar">Somente ao clicar em “Baixar agora”</option>
+          </select>
+          <small>“Popup e página” protege a abertura do cartão e a página própria. A opção “Somente ao clicar...” deixa a navegação livre e protege apenas a ação de baixar.</small>
         </label>
       </div>
 
@@ -449,7 +470,10 @@ function dados(){
     pagina: $("pagina").checked,
     abrir: $("abrir").checked,
     voltar: $("voltar").checked,
+    acaoBaixar: $("acao-baixar").value,
+    urlPagina: $("url-pagina").value.trim(),
     senhaAtiva: $("senha-ativa").checked,
+    senhaModo: $("senha-modo").value,
     senhaHash: editando?.senhaHash || "",
     url: (editando && !nomeArquivo) ? editando.url : linkRaw(arq)
   };
@@ -464,8 +488,14 @@ function atualizarSenha(){
     ? "Já existe uma senha. Deixe em branco para manter ou digite outra para trocar."
     : "A senha nunca é salva em texto puro; o painel publica somente um hash.";
 }
-$("senha-ativa").addEventListener("change", atualizarSenha);
+$("senha-ativa").addEventListener("change", () => { atualizarSenha(); atualizar(); });
 $("senha").addEventListener("input", atualizar);
+$("senha-modo").addEventListener("change", atualizar);
+$("acao-baixar").addEventListener("change", () => {
+  $("url-pagina-box").hidden = $("acao-baixar").value !== "pagina";
+  atualizar();
+});
+$("url-pagina").addEventListener("input", atualizar);
 
 function atualizar(){
   const d = dados();
@@ -587,6 +617,7 @@ function validar(){
   if (f && !EXT[f.name.split(".").pop().toLowerCase()]) return "Só são aceitos arquivos .zip, .rar ou .7z.";
   if (!v(gh.token)) return "Cole o token do GitHub.";
   if (f && f.size > 95 * 1024 * 1024) return "Arquivo acima de 95 MB. O GitHub recusa arquivos acima de 100 MB no repositório; use uma Release.";
+  if ($("acao-baixar").value === "pagina" && !/^https?:\/\//i.test($("url-pagina").value.trim())) return "Digite uma URL válida (http:// ou https://) para a outra página.";
   return "";
 }
 const ocupado = b => { $("enviar").disabled = b; $("publicar").disabled = b; $("edit-apagar").disabled = b; document.querySelectorAll("#lista button").forEach(x => x.disabled = b); };
@@ -800,7 +831,8 @@ function limparForm(){
   $("data").value = new Date().toLocaleDateString("pt-BR");
   document.querySelector('input[name="tipo"][value="ZIP"]').checked = true;
   $("pagina").checked = false; $("abrir").checked = false; $("voltar").checked = true;
-  $("senha-ativa").checked = false; $("senha").value = ""; atualizarSenha();
+  $("senha-ativa").checked = false; $("senha-modo").value = "todos"; $("senha").value = ""; atualizarSenha();
+  $("acao-baixar").value = "download"; $("url-pagina").value = ""; $("url-pagina-box").hidden = true;
   nomeArquivo = ""; arquivoSel = null; $("arq").value = "";
   $("arq-txt").textContent = "Escolher arquivo (.zip, .rar ou .7z)";
   $("arq-nome").textContent = "";
@@ -829,7 +861,10 @@ function editar(i){
   const r = document.querySelector(`input[name="tipo"][value="${d.tipo}"]`);
   if (r) r.checked = true;
   $("pagina").checked = !!d.pagina; $("abrir").checked = !!d.abrir; $("voltar").checked = d.voltar !== false;
-  $("senha-ativa").checked = !!d.senhaAtiva && !!d.senhaHash; $("senha").value = ""; atualizarSenha();
+  $("acao-baixar").value = d.acaoBaixar === "pagina" ? "pagina" : "download";
+  $("url-pagina").value = d.urlPagina || "";
+  $("url-pagina-box").hidden = $("acao-baixar").value !== "pagina";
+  $("senha-ativa").checked = !!d.senhaAtiva && !!d.senhaHash; $("senha-modo").value = d.senhaModo === "baixar" ? "baixar" : "todos"; $("senha").value = ""; atualizarSenha();
   secaoSel = normSecao(d.secao); subSel = normSub(d.subsecao); $("secao-nova").value = ""; $("sub-nova").value = ""; desenharSecoes();
   let arq = String(d.url || "").split("/").pop();
   try { arq = decodeURIComponent(arq); } catch {}
