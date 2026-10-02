@@ -9,7 +9,7 @@
     "data": "02/10/2026",
     "detalhes": "Add-on de complemento",
     "imagem": "",
-    "pagina": false,
+    "pagina": true,
     "url": "https://github.com/Arthulypa/site-de-downloads/raw/refs/heads/arquivos/Create_New_Energy.mcaddon.zip"
   },
   {
@@ -21,6 +21,7 @@
     "data": "02/10/2026",
     "detalhes": "para encantar oque quiser",
     "imagem": "",
+    "pagina": false,
     "url": "https://github.com/Arthulypa/site-de-downloads/raw/refs/heads/arquivos/Enchant_Table_v1.0.5.zip"
   }
 ]
