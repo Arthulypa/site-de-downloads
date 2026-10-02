@@ -105,6 +105,12 @@ ol li{margin-bottom:4px}
 .alterna input:checked + .trilho{background:var(--cobalto)}
 .alterna input:checked + .trilho::after{transform:translateX(28px);background:var(--manteiga)}
 .alterna input:focus-visible + .trilho{outline:4px solid var(--cobalto);outline-offset:2px}
+[hidden]{display:none!important}
+.btn.sec{background:var(--branco);color:var(--tinta)}
+.sub{display:flex;flex-direction:column;gap:16px;padding:16px;border:var(--borda);border-style:dashed;background:var(--papel)}
+.sub .trilho{background:var(--branco)}
+.sub .alterna input:checked + .trilho{background:var(--cobalto)}
+.dica{display:block;margin-top:8px;font-size:.92rem;opacity:.8}
 @media (prefers-reduced-motion:reduce){.trilho,.trilho::after{transition:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -156,6 +162,18 @@ ol li{margin-bottom:4px}
         <input id="pagina" type="checkbox" role="switch">
         <span class="trilho" aria-hidden="true"></span>
       </label>
+
+      <div class="sub" id="pag-opcoes" hidden>
+        <label class="alterna">
+          <span>Permitir voltar<small>Mostra, na página própria, o botão para voltar à lista de downloads.</small></span>
+          <input id="voltar" type="checkbox" role="switch" checked>
+          <span class="trilho" aria-hidden="true"></span>
+        </label>
+        <div>
+          <button class="btn sec" id="copiar-pag" type="button" disabled>Copiar link da página</button>
+          <small class="dica" id="dica-link"></small>
+        </div>
+      </div>
 
       <div class="duas">
         <label class="campo">Versão
@@ -253,6 +271,7 @@ function dados(){
     detalhes: $("detalhes").value.trim(),
     imagem: $("imagem").value.trim(),
     pagina: $("pagina").checked,
+    voltar: $("voltar").checked,
     url: linkRaw(arq)
   };
 }
@@ -276,6 +295,7 @@ $("arq").addEventListener("change", e => {
   const aviso = $("aviso");
   nomeArquivo = f.name;
   arquivoSel = f;
+  linkPronto = false; estadoLink();
   $("arq-txt").textContent = "Trocar arquivo";
   $("arq-nome").textContent = f.name;
   $("tamanho").value = tamanhoLegivel(f.size);
@@ -424,6 +444,7 @@ $("enviar").addEventListener("click", async () => {
   status("Enviando... arquivos grandes podem demorar.");
   try {
     const atualizou = await subirArquivo(arquivoSel);
+    linkPronto = true; estadoLink();
     status(atualizou ? "Arquivo atualizado no GitHub. O bloco já está com o link certo." : "Arquivo enviado. Agora copie o bloco e cole no index.html do site.", "ok");
   } catch (e) { status(e.message || "Falha de conexão. Tente de novo.", "erro"); }
   finally { ocupado(false); }
@@ -438,12 +459,30 @@ $("publicar").addEventListener("click", async () => {
     await subirArquivo(arquivoSel);
     status("Atualizando a lista do site...");
     await publicarLista(dados());
+    linkPronto = true; estadoLink();
     status("Publicado. O cartão aparece no site em até uns 5 minutos (o GitHub guarda a lista em cache por um tempo).", "ok");
   } catch (e) { status(e.message || "Falha de conexão. Tente de novo.", "erro"); }
   finally { ocupado(false); }
 });
 
-$("pagina").addEventListener("change", atualizar);
+let linkPronto = false;
+function estadoLink(){
+  $("pag-opcoes").hidden = !$("pagina").checked;
+  $("copiar-pag").disabled = !linkPronto;
+  $("dica-link").textContent = linkPronto
+    ? "Link pronto. Se você só enviou o arquivo, ele funciona depois de colar o bloco no site."
+    : "Libera depois de publicar ou enviar o arquivo.";
+}
+$("pagina").addEventListener("change", () => { linkPronto = false; estadoLink(); atualizar(); });
+$("voltar").addEventListener("change", atualizar);
+$("copiar-pag").addEventListener("click", async () => {
+  const btn = $("copiar-pag");
+  const link = new URL("../?d=" + encodeURIComponent(dados().id), location.href).href;
+  try { await navigator.clipboard.writeText(link); btn.textContent = "Link copiado"; }
+  catch { btn.textContent = "Não foi possível copiar"; }
+  setTimeout(() => { btn.textContent = "Copiar link da página"; }, 2000);
+});
+estadoLink();
 
 atualizar();
 </script>
