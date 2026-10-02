@@ -136,8 +136,7 @@ const DOWNLOADS = [
     detalhes: "Texto maior que aparece ao abrir o cartão: o que tem dentro, como instalar, o que mudou.",
     imagem: "", // opcional: ex. "download/capa.png" (se vazio, mostra o tipo do arquivo)
     url: "download/arquivo.zip" // o arquivo fica na pasta download/ do repositório
-  }
-];
+  },
   
   {
     nome: "Teste",
@@ -149,7 +148,8 @@ const DOWNLOADS = [
     detalhes: "Apenas um teste",
     imagem: "",
     url: "download/bedrock-painel-ip-hostname-playit.zip"
-  },
+  }
+];
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const grade = document.getElementById("grade");
